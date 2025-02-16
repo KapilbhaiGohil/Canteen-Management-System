@@ -1,20 +1,31 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt'
 
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    passwordHash: { type: String, required: true },
-    role: { type: String, enum: ['foodProvider', 'admin', 'foodMaker'], required: true },
-    canteenId: { type: mongoose.Schema.Types.ObjectId, ref: 'Canteen', required: true }
+    password: { type: String, required: true },
+    role: { type: String, enum: ['foodProvider','manager', 'admin', 'foodMaker'], required: true },
+    canteenId: { type: mongoose.Schema.Types.ObjectId, ref: 'Canteen'},
+    refreshTokens: [{ type: String }],
 }, { timestamps: true });
 
+userSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) return next();
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+})
+userSchema.methods.comparePassword = function (password) {
+    return bcrypt.compare(password, this.password);
+};
 const canteenSchema = new mongoose.Schema({
     name: { type: String, required: true },
     collegeName: { type: String },
+    imageUrl: { type: String },
     address: { type: String, required: true }
 }, { timestamps: true });
 
-const menuItemSchema = new mongoose.Schema({
+const menuSchema = new mongoose.Schema({
     name: { type: String, required: true },
     imageUrl: { type: String },
     category: { type: String, required: true },
@@ -26,7 +37,7 @@ const menuItemSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema({
     items: [
         {
-            itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem', required: true },
+            itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Menu', required: true },
             quantity: { type: Number, required: true },
             status: { type: String, enum: ['pending', 'completed', 'cancelled'], default: 'pending' }
         }
@@ -34,12 +45,12 @@ const orderSchema = new mongoose.Schema({
     orderNumber: { type: Number, required: true },
     status: { type: String, enum: ['pending', 'completed', 'cancelled'], default: 'pending' },
     totalAmount: { type: Number, required: true }
-    
+
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 const Canteen = mongoose.model('Canteen', canteenSchema);
-const MenuItem = mongoose.model('MenuItem', menuItemSchema);
+const Menu = mongoose.model('Menu', menuSchema);
 const Order = mongoose.model('Order', orderSchema);
 
-export { User, Canteen, MenuItem, Order };
+export { User, Canteen, Menu, Order };
