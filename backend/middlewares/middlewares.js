@@ -1,4 +1,4 @@
-import { User } from "../models/models";
+import { User } from "../models/models.js";
 
 export const authenticate = async (req, res, next) => {
     try {
@@ -6,7 +6,6 @@ export const authenticate = async (req, res, next) => {
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ error: 'Unauthorized request' });
         }
-
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const user = await User.findById(decoded.id);
