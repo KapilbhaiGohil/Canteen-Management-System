@@ -1,58 +1,181 @@
 import 'package:flutter/material.dart';
 
-class CustomTextfield extends StatefulWidget {
-  const CustomTextfield({super.key});
+class CustomTextField extends StatelessWidget {
+  final TextEditingController? controller;
+  final String hintText;
+  final String labelText;
+  final IconData? suffixIcon;
+  final Function(String)? onChanged;
+  final bool obscureText;
 
-  @override
-  State<CustomTextfield> createState() => _CustomTextfieldState();
-}
+  const CustomTextField({
+    super.key,
+    this.controller,
+    required this.hintText,
+    required this.labelText,
+    this.suffixIcon,
+    this.onChanged,
+    required this.obscureText,
+  });
 
-class _CustomTextfieldState extends State<CustomTextfield> {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      child: TextField(
-        decoration: InputDecoration(
-
-            fillColor: Colors.black12,
-            filled: true,
-            hintText: 'This is hint text',
-            labelStyle: TextStyle(),
-            border: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.black),
-                borderRadius: BorderRadius.circular(5)),
-            focusedBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.black),
-                borderRadius: BorderRadius.circular(5))),
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      obscureText: obscureText,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        suffixIcon: suffixIcon != null
+            ? Icon(suffixIcon, color: Colors.blueAccent)
+            : null,
+        fillColor: Colors.black12,
+        filled: true,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          color: Colors.blueAccent,
+          fontWeight: FontWeight.normal,
+        ),
+        labelText: labelText,
+        labelStyle: const TextStyle(
+          color: Colors.blueAccent,
+          fontSize: 16,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        border: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
       ),
     );
   }
 }
 
-class CustomeButton extends StatefulWidget {
-  const CustomeButton({super.key});
+class CustomTextFormField extends StatelessWidget {
+  final TextEditingController? controller;
+  final String hintText;
+  final String labelText;
+  final IconData? suffixIcon;
+  final Function(String)? onChanged;
+  final bool obscureText;
+  final FormFieldValidator<String>? validator;
+
+  const CustomTextFormField({
+    super.key,
+    this.controller,
+    required this.hintText,
+    required this.labelText,
+    this.suffixIcon,
+    this.onChanged,
+    required this.obscureText,
+    this.validator,
+  });
 
   @override
-  State<CustomeButton> createState() => _CustomeButtonState();
+  Widget build(BuildContext context) {
+    return TextFormField(
+      validator: validator,
+      controller: controller,
+      onChanged: onChanged,
+      obscureText: obscureText,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        suffixIcon: suffixIcon != null
+            ? Icon(suffixIcon, color: Colors.blueAccent)
+            : null,
+        fillColor: Colors.black12,
+        filled: true,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          color: Colors.blueAccent,
+          fontWeight: FontWeight.normal,
+        ),
+        labelText: labelText,
+        labelStyle: const TextStyle(
+          color: Colors.blueAccent,
+          fontSize: 16,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        border: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ),
+    );
+  }
 }
 
-class _CustomeButtonState extends State<CustomeButton> {
+class CustomButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final Color backgroundColor;
+  final Color textColor;
+
+  const CustomButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.backgroundColor = Colors.blue,
+    this.textColor = Colors.white,
+  });
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: double.infinity,
+      width: double.infinity, // Takes full width
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                foregroundColor: textColor,
+                backgroundColor: backgroundColor,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(5)),
+                ),
+              ),
+              child: Text(
+                text,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-      child: ElevatedButton(
-        onPressed: () => {},
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.black87,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(5)))
+}
+
+class ShowSnackbar {
+  static void showMessage(BuildContext context, String message, {bool isOk = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isOk ? Colors.green : Colors.red,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        child: Text("submit",
-        style: TextStyle(
-
-        ),),
+        backgroundColor: Colors.white,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

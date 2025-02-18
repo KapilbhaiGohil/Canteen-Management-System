@@ -1,3 +1,4 @@
+import 'package:admin/services/canteen-service.dart';
 import 'package:admin/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -9,34 +10,94 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final CanteenService _canteenService = CanteenService();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  String? _validateEmail(String? email) {
+    if (email == null || email.isEmpty) {
+      return 'Please enter your email';
+    } else if (!RegExp(r'\S+@\S+\.\S+').hasMatch(email)) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  }
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    } else if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
+  void _login ()async{
+    if (_formKey.currentState?.validate() ?? false) {
+      String email = emailController.text;
+      String password = passwordController.text;
+      final resData = await _canteenService.login(email, password);
+      if(resData['isOk']){
+        ShowSnackbar.showMessage(context, resData['message'], isOk: true);
+      }else{
+        ShowSnackbar.showMessage(context, resData['error'], isOk: false);
+      }
+    } else {
+      ShowSnackbar.showMessage(context, "Please fill in valid details.", isOk: false);
+    }
+  }
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+
+    return Scaffold(
+      backgroundColor: Colors.black87,
       body: Padding(
-        padding: EdgeInsets.all(30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-
-            Text(
-              "Login",
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.w400
+        padding: const EdgeInsets.all(30),
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUnfocus,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text(
+                "Welcome back !",
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.blueAccent
+                ),
               ),
-            ),
-            Column(
-              children: [
-                CustomTextfield(),
-                const SizedBox(height: 20,),
-                CustomTextfield(),
-                const SizedBox(height: 20,),
-                CustomeButton()
-              ],
-            )
-
-          ],
+              const SizedBox(height: 70,),
+              Column(
+                children: [
+                  CustomTextFormField(
+                    hintText: 'Enter your email.',
+                    labelText: 'Email',
+                    suffixIcon: Icons.email,
+                    controller: emailController,
+                    obscureText: false,
+                    validator: _validateEmail,
+                  ),
+                  const SizedBox(height: 20,),
+                   CustomTextFormField(
+                    hintText: 'Enter your password.',
+                    labelText: 'Password',
+                    suffixIcon: Icons.lock,
+                    controller: passwordController,
+                    obscureText: true,
+                     validator: _validatePassword,
+                  ),
+                  const SizedBox(height: 20,),
+                  CustomButton(
+                    text: 'Submit',
+                    backgroundColor: Colors.blueAccent,
+                    textColor: Colors.white, onPressed:_login,
+                  )
+                ],
+              ),
+            ],
+          ),
         ),
       )
     );
