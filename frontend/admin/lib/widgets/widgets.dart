@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
@@ -66,6 +67,7 @@ class CustomTextFormField extends StatelessWidget {
   final Function(String)? onChanged;
   final bool? obscureText;
   final FormFieldValidator<String>? validator;
+  final TextInputType? keyboardType;
 
   const CustomTextFormField({
     super.key,
@@ -75,18 +77,20 @@ class CustomTextFormField extends StatelessWidget {
     this.suffixIcon,
     this.onChanged,
     this.obscureText,
-    this.validator,
+    this.validator, this.keyboardType,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      keyboardType: keyboardType ?? TextInputType.text,
       validator: validator,
       controller: controller,
       onChanged: onChanged,
       obscureText: obscureText ?? false,
       style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
+
         suffixIcon: suffixIcon != null
             ? Icon(suffixIcon, color: Colors.blueAccent)
             : null,
@@ -201,48 +205,67 @@ class ShowSnackbar {
 }
 
 class CustomListTile extends StatelessWidget {
-  const CustomListTile({super.key});
+  final String canteenName;
+  final String collegeName;
+  final String district;
+  final String state;
+  final int pincode;
+  final String imageUrl;
+
+  const CustomListTile({
+    super.key,
+    required this.canteenName,
+    required this.collegeName,
+    required this.district,
+    required this.state,
+    required this.pincode,
+    required this.imageUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-          border: Border.all(color: Colors.black, strokeAlign: -1, width: 1.4),
-          borderRadius: BorderRadius.circular(5),
-          color: Colors.black12),
+        border: Border.all(color: Colors.black, width: 1.4),
+        borderRadius: BorderRadius.circular(5),
+        color: Colors.black12,
+      ),
       padding: const EdgeInsets.all(8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            Icons.email,
-            color: Colors.blueAccent,
-            size: 50,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(5), // Rounded corners for the image
+            child: Image.network(
+              imageUrl,
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover, // Ensure the image covers the area nicely
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.error,
+                color: Colors.red,
+                size: 50,
+              ), // Show error icon if image fails to load
+            ),
           ),
-          const SizedBox(
-            width: 15,
-          ),
+          const SizedBox(width: 15),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Canteen name",
-                style: TextStyle(
+                canteenName,
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(
-                width: 8,
-              ),
-              Text("Parul University, Vadodara"),
-              const SizedBox(
-                width: 8,
-              ),
-              Text("Gujarat , 890878"),
+              const SizedBox(height: 4),
+              Text("$collegeName, $district"),
+              const SizedBox(height: 4),
+              Text("$state, $pincode"),
             ],
-          )
+          ),
         ],
       ),
     );

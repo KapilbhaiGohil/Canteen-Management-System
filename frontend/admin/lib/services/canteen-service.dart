@@ -1,57 +1,77 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../constants.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class CanteenService {
   final String baseUrl;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  CanteenService({this.baseUrl = "http://10.0.2.2:8080"});
+  CanteenService({this.baseUrl = AppConstants.baseUrl});
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    final url = Uri.parse('$baseUrl/auth/login');
+  Future<Map<String, dynamic>> addCanteen({
+    required String name,
+    required String collegeName,
+    required String district,
+    required String state,
+    required String pinCode,
+    File? imageFile,
+  }) async {
+    final url = Uri.parse('$baseUrl/canteen/create');
+    final accessToken = await _secureStorage.read(key: 'accessToken');
+
+    var request = http.MultipartRequest('POST', url)
+      ..headers['Authorization'] = 'Bearer $accessToken'
+      ..headers['Content-Type'] = 'multipart/form-data'
+      ..fields['name'] = name
+      ..fields['collegeName'] = collegeName
+      ..fields['district'] = district
+      ..fields['state'] = state
+      ..fields['pincode'] = pinCode;
+
+    if (imageFile != null) {
+      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+    }
+
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-      print(responseData);
-      if (response.statusCode == 200) {
-        if (responseData.containsKey('accessToken') && responseData.containsKey('refreshToken')) {
-          return responseData;
-        } else {
-          return {"isOk":false,"error":'Error while exchanging data to server.'};
-        }
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 201) {
+        return {"isOk": true, "message": "Canteen added successfully.", "canteen": responseData['canteen']};
       } else {
-        return {"isOk":false,"error":responseData['error']};
+        return {"isOk": false, "error": responseData['error'] ?? "Failed to add canteen."};
       }
     } catch (e) {
-      print("Login failed : ${e.toString()}");
-      return {"isOk":false,"error":"Some error occurred while fulfilling your request."};
+      print("Error adding canteen: $e");
+      return {"isOk": false, "error": "An error occurred while adding the canteen."};
     }
   }
-  Future<Map<String, dynamic>> name(String email, String password) async {
-    final url = Uri.parse('$baseUrl/');
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
 
-        }),
+  Future<List<dynamic>> getCanteens() async {
+    final url = Uri.parse('$baseUrl/canteen/get');
+    final accessToken = await _secureStorage.read(key: 'accessToken');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
       );
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
       if (response.statusCode == 200) {
-        return responseData;
+        return jsonDecode(response.body);
       } else {
-        return {"isOk":false,"error":"Some error occurred while fulfilling your request."};
+        print("Failed to fetch canteens: ${response.body}");
+        return [];
       }
     } catch (e) {
-      print("Login failed : ${e.toString()}");
-      return {"isOk":false,"error":"Some error occurred while fulfilling your request."};
+      print("Error fetching canteens: $e");
+      return [];
     }
   }
 }

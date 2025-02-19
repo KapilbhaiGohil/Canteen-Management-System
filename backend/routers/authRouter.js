@@ -18,54 +18,110 @@ const generateTokens = (user) => {
 
 authRouter.post('/register', async (req, res) => {
     try {
+        console.log("Register request received:", req.body);
+        
         const { name, email, password, role, canteenId } = req.body;
         if (!name || !email || !password || !role) {
+            console.log("Missing fields in registration");
             return res.status(400).json({ error: 'All fields are required!' });
         }
+
         if (canteenId) {
             const canteen = await Canteen.findById(canteenId);
-            if (!canteen) return res.status(404).json({ error: "Invalid canteen ID." });
+            if (!canteen) {
+                console.log("Invalid canteen ID");
+                return res.status(404).json({ error: "Invalid canteen ID." });
+            }
         }
-        const existingUser = await User.findOne({ email });
-        if (existingUser) return res.status(409).json({ error: 'User with this email already exists.' });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ name, email, password: hashedPassword, role, canteenId, refreshTokens: [] });
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            console.log("User already exists:", email);
+            return res.status(409).json({ error: 'User with this email already exists.' });
+        }
+        const user = new User({ name, email, password, role, canteenId, refreshTokens: [] });
         await user.save();
 
+        console.log("User registered successfully:", user._id);
         return res.status(201).json({ message: "User registered successfully!" });
     } catch (err) {
-        console.error(err);
+        console.error("Register error:", err);
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
 authRouter.post('/login', async (req, res) => {
     try {
+        console.log("Login request received:", req.body);
+
         const { email, password } = req.body;
         if (!email || !password) {
+            console.log("Missing email or password");
             return res.status(400).json({ error: 'Email and password are required.' });
         }
 
         const user = await User.findOne({ email });
-        if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
+        if (!user) {
+            console.log("User not found:", email);
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }
 
         const match = await bcrypt.compare(password, user.password);
-        if (!match) return res.status(401).json({ error: 'Invalid email or password.' });
+        if (!match) {
+            console.log("Invalid password attempt for user:", email);
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }
 
         const tokens = generateTokens(user);
         user.refreshTokens.push(tokens.refreshToken);
         await user.save();
 
+        console.log("Login successful for user:", user._id);
         return res.status(200).json(tokens);
     } catch (err) {
-        console.error(err);
+        console.error("Login error:", err);
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
+authRouter.post('/validateToken', async (req, res) => {
+    try {
+        console.log("Token validation request received. Checking headers...");
+        
+        const authHeader = req.headers.authorization;
+        const accessToken = authHeader && authHeader.split(' ')[1];
+
+        if (!accessToken) {
+            console.log("No access token provided.");
+            return res.status(400).json({ error: "Access token required." });
+        }
+
+        jwt.verify(accessToken, ACCESS_SECRET, async (err, decoded) => {
+            if (err) {
+                console.log("Token validation failed:", err.message);
+                return res.status(403).json({ error: "Invalid or expired access token." });
+            }
+            
+            const user = await User.findById(decoded.id);
+            if (!user) {
+                console.log("User not found for this token.");
+                return res.status(404).json({ error: "User not found." });
+            }
+
+            console.log("Access token is valid for user:", user._id);
+            return res.status(200).json({ message: "Access token is valid." });
+        });
+    } catch (err) {
+        console.error("Token validation error:", err);
+        return res.status(500).json({ error: "Internal server error." });
+    }
+});
+
+
 authRouter.post('/refreshTokens', async (req, res) => {
     try {
+        console.log("Refresh token request received:", req.body);
+
         const { refreshToken } = req.body;
         if (!refreshToken) return res.status(400).json({ error: "Refresh token required." });
 
@@ -73,6 +129,7 @@ authRouter.post('/refreshTokens', async (req, res) => {
         try {
             decoded = jwt.verify(refreshToken, REFRESH_SECRET);
         } catch (err) {
+            console.log("Invalid or expired refresh token");
             return res.status(403).json({ error: "Invalid or expired refresh token." });
         }
 
@@ -80,6 +137,7 @@ authRouter.post('/refreshTokens', async (req, res) => {
         if (!user) return res.status(404).json({ error: "User not found." });
 
         if (!user.refreshTokens.includes(refreshToken)) {
+            console.log("Refresh token not recognized for user:", user._id);
             return res.status(403).json({ error: "Refresh token not recognized." });
         }
 
@@ -88,15 +146,19 @@ authRouter.post('/refreshTokens', async (req, res) => {
         user.refreshTokens.push(newTokens.refreshToken);
         await user.save();
 
+        console.log("New tokens generated for user:", user._id);
         return res.status(200).json(newTokens);
     } catch (err) {
-        console.error(err);
+        console.error("Refresh token error:", err);
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
+// Logout
 authRouter.post('/logout', async (req, res) => {
     try {
+        console.log("Logout request received:", req.body);
+
         const { refreshToken } = req.body;
         if (!refreshToken) return res.status(400).json({ error: "Refresh token required." });
 
@@ -104,54 +166,22 @@ authRouter.post('/logout', async (req, res) => {
         try {
             decoded = jwt.verify(refreshToken, REFRESH_SECRET);
         } catch (err) {
+            console.log("Invalid or expired refresh token");
             return res.status(403).json({ error: "Invalid or expired refresh token." });
         }
 
         const user = await User.findById(decoded.id);
         if (!user) return res.status(404).json({ error: "User not found." });
-
-        if (!user.refreshTokens.includes(refreshToken)) {
-            return res.status(403).json({ error: "Refresh token not recognized." });
-        }
 
         user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
         await user.save();
 
+        console.log("User logged out successfully:", user._id);
         return res.status(200).json({ message: "Successfully logged out." });
     } catch (err) {
-        console.error(err);
+        console.error("Logout error:", err);
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });
-
-authRouter.post('/logout-from-all', async (req, res) => {
-    try {
-        const { refreshToken } = req.body;
-        if (!refreshToken) return res.status(400).json({ error: "Refresh token required." });
-
-        let decoded;
-        try {
-            decoded = jwt.verify(refreshToken, REFRESH_SECRET);
-        } catch (err) {
-            return res.status(403).json({ error: "Invalid or expired refresh token." });
-        }
-
-        const user = await User.findById(decoded.id);
-        if (!user) return res.status(404).json({ error: "User not found." });
-
-        if (!user.refreshTokens.includes(refreshToken)) {
-            return res.status(403).json({ error: "Refresh token not recognized or already logged out from all devices." });
-        }
-
-        user.refreshTokens = [];
-        await user.save();
-
-        return res.status(200).json({ message: "Successfully logged out from all devices." });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Internal server error.' });
-    }
-});
-
 
 export { authRouter };
