@@ -24,21 +24,21 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         suffixIcon: suffixIcon != null
             ? Icon(suffixIcon, color: Colors.blueAccent)
             : null,
-        fillColor: Colors.black12,
+        fillColor: Colors.white,
         filled: true,
         hintText: hintText,
         hintStyle: const TextStyle(
-          color: Colors.blueAccent,
+          color: Colors.grey,
           fontWeight: FontWeight.normal,
         ),
         labelText: labelText,
         labelStyle: const TextStyle(
-          color: Colors.blueAccent,
+          color: Colors.black,
           fontSize: 16,
         ),
         enabledBorder: OutlineInputBorder(
@@ -64,7 +64,7 @@ class CustomTextFormField extends StatelessWidget {
   final String labelText;
   final IconData? suffixIcon;
   final Function(String)? onChanged;
-  final bool obscureText;
+  final bool? obscureText;
   final FormFieldValidator<String>? validator;
 
   const CustomTextFormField({
@@ -74,7 +74,7 @@ class CustomTextFormField extends StatelessWidget {
     required this.labelText,
     this.suffixIcon,
     this.onChanged,
-    required this.obscureText,
+    this.obscureText,
     this.validator,
   });
 
@@ -84,22 +84,22 @@ class CustomTextFormField extends StatelessWidget {
       validator: validator,
       controller: controller,
       onChanged: onChanged,
-      obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
+      obscureText: obscureText ?? false,
+      style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         suffixIcon: suffixIcon != null
             ? Icon(suffixIcon, color: Colors.blueAccent)
             : null,
-        fillColor: Colors.black12,
+        fillColor: Colors.white,
         filled: true,
         hintText: hintText,
         hintStyle: const TextStyle(
-          color: Colors.blueAccent,
+          color: Colors.grey,
           fontWeight: FontWeight.normal,
         ),
         labelText: labelText,
         labelStyle: const TextStyle(
-          color: Colors.blueAccent,
+          color: Colors.black,
           fontSize: 16,
         ),
         enabledBorder: OutlineInputBorder(
@@ -124,6 +124,7 @@ class CustomButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color backgroundColor;
   final Color textColor;
+  final IconData? icon;
 
   const CustomButton({
     super.key,
@@ -131,12 +132,13 @@ class CustomButton extends StatelessWidget {
     required this.onPressed,
     this.backgroundColor = Colors.blue,
     this.textColor = Colors.white,
+    this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: double.infinity, // Takes full width
+      width: double.infinity,
       child: Row(
         children: [
           Expanded(
@@ -149,9 +151,26 @@ class CustomButton extends StatelessWidget {
                   borderRadius: BorderRadius.all(Radius.circular(5)),
                 ),
               ),
-              child: Text(
-                text,
-                style: const TextStyle(fontSize: 16),
+              child: Center(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(
+                        icon,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(
+                        width: 8,
+                      )
+                    ],
+                    Text(
+                      text,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -159,11 +178,11 @@ class CustomButton extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class ShowSnackbar {
-  static void showMessage(BuildContext context, String message, {bool isOk = false}) {
+  static void showMessage(BuildContext context, String message,
+      {bool isOk = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -176,6 +195,55 @@ class ShowSnackbar {
         ),
         backgroundColor: Colors.white,
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+class CustomListTile extends StatelessWidget {
+  const CustomListTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+          border: Border.all(color: Colors.black, strokeAlign: -1, width: 1.4),
+          borderRadius: BorderRadius.circular(5),
+          color: Colors.black12),
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.email,
+            color: Colors.blueAccent,
+            size: 50,
+          ),
+          const SizedBox(
+            width: 15,
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Canteen name",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                width: 8,
+              ),
+              Text("Parul University, Vadodara"),
+              const SizedBox(
+                width: 8,
+              ),
+              Text("Gujarat , 890878"),
+            ],
+          )
+        ],
       ),
     );
   }

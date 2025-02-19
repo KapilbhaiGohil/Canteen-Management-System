@@ -23,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     return null;
   }
+
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter a password';
@@ -32,74 +33,80 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  void _login ()async{
+  void _login() async {
     if (_formKey.currentState?.validate() ?? false) {
       String email = emailController.text;
       String password = passwordController.text;
       final resData = await _canteenService.login(email, password);
-      if(resData['isOk']){
+      if (resData['isOk']) {
         ShowSnackbar.showMessage(context, resData['message'], isOk: true);
-      }else{
+      } else {
         ShowSnackbar.showMessage(context, resData['error'], isOk: false);
       }
     } else {
-      ShowSnackbar.showMessage(context, "Please fill in valid details.", isOk: false);
+      ShowSnackbar.showMessage(context, "Please fill in valid details.",
+          isOk: false);
     }
   }
+
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor: Colors.black87,
-      body: Padding(
-        padding: const EdgeInsets.all(30),
-        child: Form(
-          key: _formKey,
-          autovalidateMode: AutovalidateMode.onUnfocus,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Text(
-                "Welcome back !",
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.blueAccent
+        backgroundColor: Colors.white,
+        body: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Form(
+            key: _formKey,
+            autovalidateMode: AutovalidateMode.onUnfocus,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  "Welcome back !",
+                  style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.blueAccent),
                 ),
-              ),
-              const SizedBox(height: 70,),
-              Column(
-                children: [
-                  CustomTextFormField(
-                    hintText: 'Enter your email.',
-                    labelText: 'Email',
-                    suffixIcon: Icons.email,
-                    controller: emailController,
-                    obscureText: false,
-                    validator: _validateEmail,
-                  ),
-                  const SizedBox(height: 20,),
-                   CustomTextFormField(
-                    hintText: 'Enter your password.',
-                    labelText: 'Password',
-                    suffixIcon: Icons.lock,
-                    controller: passwordController,
-                    obscureText: true,
-                     validator: _validatePassword,
-                  ),
-                  const SizedBox(height: 20,),
-                  CustomButton(
-                    text: 'Submit',
-                    backgroundColor: Colors.blueAccent,
-                    textColor: Colors.white, onPressed:_login,
-                  )
-                ],
-              ),
-            ],
+                const SizedBox(
+                  height: 70,
+                ),
+                Column(
+                  children: [
+                    CustomTextFormField(
+                      hintText: 'Enter your email.',
+                      labelText: 'Email',
+                      suffixIcon: Icons.email,
+                      controller: emailController,
+                      obscureText: false,
+                      validator: _validateEmail,
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    CustomTextFormField(
+                      hintText: 'Enter your password.',
+                      labelText: 'Password',
+                      suffixIcon: Icons.lock,
+                      controller: passwordController,
+                      obscureText: true,
+                      validator: _validatePassword,
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    CustomButton(
+                      text: 'Submit',
+                      backgroundColor: Colors.blueAccent,
+                      textColor: Colors.white,
+                      onPressed: _login,
+                    )
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      )
-    );
+        ));
   }
 }

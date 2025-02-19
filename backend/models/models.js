@@ -22,7 +22,9 @@ const canteenSchema = new mongoose.Schema({
     name: { type: String, required: true },
     collegeName: { type: String },
     imageUrl: { type: String },
-    address: { type: String, required: true }
+    state :{type:String,required:true},
+    district:{type:String,required:true},
+    pinCode:{type:Number,required:true}
 }, { timestamps: true });
 
 const menuSchema = new mongoose.Schema({
