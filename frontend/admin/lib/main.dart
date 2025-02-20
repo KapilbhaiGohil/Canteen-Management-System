@@ -1,4 +1,5 @@
 import 'package:admin/providers/authProvider.dart';
+import 'package:admin/providers/canteenProvider.dart';
 import 'package:admin/screens/home.dart';
 import 'package:admin/screens/login.dart';
 import 'package:flutter/material.dart';
@@ -14,8 +15,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AuthProvider()..tryAutoLogin(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+            create: (context) => AuthProvider()..tryAutoLogin()),
+        ChangeNotifierProvider(create: (context) => CanteenProvider()),
+      ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
           if (authProvider.isLoading) {

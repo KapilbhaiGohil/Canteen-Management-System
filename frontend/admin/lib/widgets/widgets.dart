@@ -8,7 +8,7 @@ class CustomTextField extends StatelessWidget {
   final IconData? suffixIcon;
   final Function(String)? onChanged;
   final bool obscureText;
-
+  final List<TextInputFormatter>? inputFormatters;
   const CustomTextField({
     super.key,
     this.controller,
@@ -17,6 +17,7 @@ class CustomTextField extends StatelessWidget {
     this.suffixIcon,
     this.onChanged,
     required this.obscureText,
+    this.inputFormatters,
   });
 
   @override
@@ -55,6 +56,7 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(5),
         ),
       ),
+      inputFormatters: inputFormatters ?? [],
     );
   }
 }
@@ -68,7 +70,7 @@ class CustomTextFormField extends StatelessWidget {
   final bool? obscureText;
   final FormFieldValidator<String>? validator;
   final TextInputType? keyboardType;
-
+  final List<TextInputFormatter>? inputFormatters;
   const CustomTextFormField({
     super.key,
     this.controller,
@@ -77,7 +79,9 @@ class CustomTextFormField extends StatelessWidget {
     this.suffixIcon,
     this.onChanged,
     this.obscureText,
-    this.validator, this.keyboardType,
+    this.validator,
+    this.keyboardType,
+    this.inputFormatters,
   });
 
   @override
@@ -90,7 +94,6 @@ class CustomTextFormField extends StatelessWidget {
       obscureText: obscureText ?? false,
       style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
-
         suffixIcon: suffixIcon != null
             ? Icon(suffixIcon, color: Colors.blueAccent)
             : null,
@@ -119,6 +122,7 @@ class CustomTextFormField extends StatelessWidget {
           borderRadius: BorderRadius.circular(5),
         ),
       ),
+      inputFormatters: inputFormatters ?? [],
     );
   }
 }
@@ -235,11 +239,12 @@ class CustomListTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(5), // Rounded corners for the image
+            borderRadius:
+                BorderRadius.circular(5), // Rounded corners for the image
             child: Image.network(
               imageUrl,
-              width: 50,
-              height: 50,
+              width: 80,
+              height: 80,
               fit: BoxFit.cover, // Ensure the image covers the area nicely
               errorBuilder: (context, error, stackTrace) => const Icon(
                 Icons.error,

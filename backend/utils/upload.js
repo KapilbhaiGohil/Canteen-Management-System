@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import '../env.js'
+import '../env.js';
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -11,9 +11,12 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
     cloudinary,
-    params: {
-        folder: 'canteens',
-        allowed_formats: ['jpg', 'jpeg', 'png'],
+    params: async (req, file) => {
+        const folder = req.body.folder || 'canteens';
+        return {
+            folder: folder,
+            allowed_formats: ['jpg', 'jpeg', 'png'],
+        };
     },
 });
 

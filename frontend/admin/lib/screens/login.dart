@@ -37,6 +37,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
   void _login() async {
     if (!_formKey.currentState!.validate()) {
       ShowSnackbar.showMessage(context, "Please fill in valid details.",
@@ -115,11 +122,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   _isLoading
                       ? const CircularProgressIndicator()
                       : CustomButton(
-                    text: 'Submit',
-                    backgroundColor: Colors.blueAccent,
-                    textColor: Colors.white,
-                    onPressed: _login,
-                  ),
+                          text: 'Submit',
+                          backgroundColor: Colors.blueAccent,
+                          textColor: Colors.white,
+                          onPressed: _login,
+                        ),
                 ],
               ),
             ],

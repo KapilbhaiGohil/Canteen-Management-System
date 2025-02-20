@@ -1,9 +1,10 @@
 import 'dart:io';
-
+import 'package:admin/providers/canteenProvider.dart';
 import 'package:admin/services/canteen-service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 import '../widgets/widgets.dart';
 
@@ -37,7 +38,7 @@ class _AddcanteenState extends State<Addcanteen> {
               onTap: () async {
                 Navigator.pop(context);
                 final pickedFile =
-                await _picker.pickImage(source: ImageSource.camera);
+                    await _picker.pickImage(source: ImageSource.camera);
                 if (pickedFile != null) {
                   setState(() {
                     _image = File(pickedFile.path);
@@ -51,7 +52,7 @@ class _AddcanteenState extends State<Addcanteen> {
               onTap: () async {
                 Navigator.pop(context);
                 final pickedFile =
-                await _picker.pickImage(source: ImageSource.gallery);
+                    await _picker.pickImage(source: ImageSource.gallery);
                 if (pickedFile != null) {
                   setState(() {
                     _image = File(pickedFile.path);
@@ -64,6 +65,7 @@ class _AddcanteenState extends State<Addcanteen> {
       },
     );
   }
+
   Future<void> _submitForm() async {
     if (_image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,27 +75,28 @@ class _AddcanteenState extends State<Addcanteen> {
     }
 
     if (_formKey.currentState!.validate()) {
-      print("Canteen Name: ${_canteenNameController.text}");
-      print("College Name: ${_collegeNameController.text}");
-      print("District: ${_districtController.text}");
-      print("State: ${_stateController.text}");
-      print("Pincode: ${_pincodeController.text}");
-      print("Image: ${_image?.path ?? 'No image selected'}");
-      var resData = await _canteenService.addCanteen(imageFile: _image,name: _canteenNameController.text, collegeName: _collegeNameController.text, district: _districtController.text, state: _stateController.text, pinCode: _pincodeController.text);
-      if(resData['isOk']){
+      final canteenProvider =
+          Provider.of<CanteenProvider>(context, listen: false);
+      bool isAdded = await canteenProvider.addCanteen(
+        canteenService: _canteenService,
+        imageFile: _image,
+        name: _canteenNameController.text,
+        collegeName: _collegeNameController.text,
+        district: _districtController.text,
+        state: _stateController.text,
+        pinCode: _pincodeController.text,
+        context: context,
+      );
+
+      if (isAdded) {
         Navigator.pop(context);
         ShowSnackbar.showMessage(context, "Canteen added successfully");
-      }else{
-        print(resData);
-        ShowSnackbar.showMessage(context, "Error while adding canteen");
       }
     }
   }
 
-
   @override
   void dispose() {
-    // Dispose controllers to free resources
     _canteenNameController.dispose();
     _collegeNameController.dispose();
     _districtController.dispose();
@@ -101,6 +104,7 @@ class _AddcanteenState extends State<Addcanteen> {
     _pincodeController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,12 +134,11 @@ class _AddcanteenState extends State<Addcanteen> {
                           CircleAvatar(
                             radius: 70,
                             backgroundColor: Colors.grey[300],
-                            backgroundImage: _image != null
-                                ? FileImage(_image!)
-                                : null,
+                            backgroundImage:
+                                _image != null ? FileImage(_image!) : null,
                             child: _image == null
                                 ? const Icon(Icons.image,
-                                size: 50, color: Colors.grey)
+                                    size: 50, color: Colors.grey)
                                 : null,
                           ),
                           Positioned(
@@ -163,10 +166,10 @@ class _AddcanteenState extends State<Addcanteen> {
                       obscureText: false,
                       suffixIcon: Icons.food_bank,
                       controller: _canteenNameController,
-                      validator: (value){
-                        if(value == null || value.isEmpty){
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
                           return "Canteen name is required";
-                        }else if(value.length < 5){
+                        } else if (value.length < 5) {
                           return "Canteen name should be atleast 5 character long";
                         }
                         return null;
@@ -189,8 +192,8 @@ class _AddcanteenState extends State<Addcanteen> {
                             labelText: "District",
                             controller: _districtController,
                             suffixIcon: Icons.business,
-                            validator: (value){
-                              if(value == null || value.isEmpty){
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
                                 return "District name is required";
                               }
                               return null;
@@ -204,8 +207,8 @@ class _AddcanteenState extends State<Addcanteen> {
                             hintText: 'Enter state name',
                             controller: _stateController,
                             suffixIcon: Icons.location_city,
-                            validator: (value){
-                              if(value == null || value.isEmpty){
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
                                 return "State name is required";
                               }
                               return null;
@@ -221,14 +224,15 @@ class _AddcanteenState extends State<Addcanteen> {
                       labelText: 'Pincode',
                       controller: _pincodeController,
                       suffixIcon: Icons.pin,
-                      validator: (value){
-                        if(value == null || value.isEmpty){
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
                           return "Pincode is required.";
-                        }else if(value.length !=6){
+                        } else if (value.length != 6) {
                           return "Pincode should be 6 digit number only.";
                         }
                         return null;
                       },
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                   ],
                 ),
@@ -238,10 +242,7 @@ class _AddcanteenState extends State<Addcanteen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(15),
-            child: CustomButton(
-              text: "Submit",
-              onPressed: _submitForm
-            ),
+            child: CustomButton(text: "Submit", onPressed: _submitForm),
           ),
         ],
       ),
