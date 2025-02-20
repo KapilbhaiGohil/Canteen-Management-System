@@ -276,3 +276,56 @@ class CustomListTile extends StatelessWidget {
     );
   }
 }
+
+class CustomDropdown extends StatelessWidget {
+  final String? value;
+  final String hintText;
+  final List<String> items;
+  final Function(String?)? onChanged;
+  final FormFieldValidator<String>? validator;
+
+  const CustomDropdown({
+    super.key,
+    required this.value,
+    required this.hintText,
+    required this.items,
+    this.onChanged,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        fillColor: Colors.white,
+        filled: true,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          color: Colors.grey,
+          fontWeight: FontWeight.normal,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        border: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ),
+      items: items.map((String item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Text(item),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      validator: validator,
+    );
+  }
+}

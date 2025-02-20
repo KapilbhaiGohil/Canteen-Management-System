@@ -20,16 +20,8 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Add new category",
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.blueAccent,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Column(
+    return
+      Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
@@ -115,7 +107,6 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
             ),
           ),
         ],
-      ),
     );
   }
 }

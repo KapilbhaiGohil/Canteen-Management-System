@@ -81,16 +81,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Add new item",
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.blueAccent,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Column(
+    return Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
@@ -194,7 +185,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
             child: CustomButton(text: "Submit", onPressed: _submitForm),
           ),
         ],
-      ),
     );
   }
 }

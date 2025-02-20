@@ -1,6 +1,6 @@
-import 'package:ddu_admin/widgets/widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+
+import '../widgets/widgets.dart';
 
 class Category extends StatefulWidget {
   final String categoryName;
@@ -11,6 +11,14 @@ class Category extends StatefulWidget {
 }
 
 class _CategoryState extends State<Category> {
+  final ScrollController _scrollController = ScrollController(); // Declare controller
+
+  @override
+  void dispose() {
+    _scrollController.dispose(); // Dispose to prevent memory leaks
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -22,7 +30,7 @@ class _CategoryState extends State<Category> {
           decoration: BoxDecoration(
               color: const Color.fromARGB(255, 193, 224, 239),
               border:
-                  Border(left: BorderSide(color: Colors.blueAccent, width: 4))),
+              Border(left: BorderSide(color: Colors.blueAccent, width: 4))),
           child: Text(
             "Category",
             style: TextStyle(
@@ -37,10 +45,11 @@ class _CategoryState extends State<Category> {
         Container(
           height: 180,
           child: Scrollbar(
-            controller: ScrollController(),
+            controller: _scrollController, // Use the same controller
             thumbVisibility: true,
             trackVisibility: true,
             child: ListView.separated(
+              controller: _scrollController, // Assign controller here
               itemCount: 7,
               scrollDirection: Axis.horizontal,
               itemBuilder: (context, index) {
