@@ -183,5 +183,31 @@ authRouter.post('/logout', async (req, res) => {
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });
+authRouter.post('/userLogin', async (req, res) => {
+    try {
+        console.log("UserLogin request received:", req.body);
+
+        const { deviceId } = req.body;
+        if (!deviceId) {
+            console.log("Missing device ID");
+            return res.status(400).json({ error: 'Device ID is required.' });
+        }
+
+        let user = await User.findOne({ deviceId });
+
+        if (!user) {
+            console.log("Device ID not recognized, creating new user...");
+            user = new User({ deviceId ,role:'user'});
+            await user.save();
+            console.log("New user created with device ID:", deviceId);
+        }
+
+        console.log("User login successful with device ID:", deviceId);
+        return res.status(200).json({ message: "Login successful", userId: user._id });
+    } catch (err) {
+        console.error("UserLogin error:", err);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
 
 export { authRouter };

@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 
-class EmployeeCard extends StatefulWidget {
+class ManagerCard extends StatefulWidget {
   final String name;
   final String email;
-  final String role;
+  final String canteenName;
   final VoidCallback onEdit;
 
-  const EmployeeCard({
+  const ManagerCard({
     super.key,
     required this.name,
     required this.email,
-    required this.role,
+    required this.canteenName,
     required this.onEdit,
   });
 
   @override
-  _EmployeeCardState createState() => _EmployeeCardState();
+  _ManagerCardState createState() => _ManagerCardState();
 }
 
-class _EmployeeCardState extends State<EmployeeCard> {
+class _ManagerCardState extends State<ManagerCard> {
   bool _isTapped = false;
 
   void _showOptions(BuildContext context) {
@@ -94,7 +94,7 @@ class _EmployeeCardState extends State<EmployeeCard> {
         curve: Curves.easeInOut,
         padding: EdgeInsets.all(10),
         width: double.infinity,
-        height: _isTapped ? 90 : 80, // Increases height on tap
+        height: _isTapped ? 120 : 110,
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 193, 224, 239),
           borderRadius: BorderRadius.only(
@@ -103,37 +103,44 @@ class _EmployeeCardState extends State<EmployeeCard> {
           ),
           border: Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
           boxShadow: _isTapped
-              ? [BoxShadow(color: Colors.blueAccent.withOpacity(0.3), blurRadius: 10)]
+              ? [
+                  BoxShadow(
+                      color: Colors.blueAccent.withOpacity(0.3), blurRadius: 10)
+                ]
               : [],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  widget.name,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueAccent),
-                ),
-                Text(
-                  widget.email,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.blueAccent),
-                ),
-              ],
-            ),
             Container(
-              padding: EdgeInsets.all(4),
+              padding: EdgeInsets.all(7),
               decoration: BoxDecoration(
                 color: Colors.green,
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
-                widget.role,
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                widget.canteenName,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
               ),
-            )
+            ),
+            Text(
+              widget.name,
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent),
+            ),
+            Text(
+              widget.email,
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent),
+            ),
           ],
         ),
       ),

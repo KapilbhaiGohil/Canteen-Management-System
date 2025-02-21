@@ -1,5 +1,6 @@
 import 'package:admin/providers/canteenProvider.dart';
 import 'package:admin/screens/addCanteen.dart';
+import 'package:admin/screens/manager.dart';
 import 'package:flutter/material.dart';
 import 'package:admin/widgets/widgets.dart';
 import 'package:provider/provider.dart';
@@ -14,24 +15,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final CanteenService _canteenService = CanteenService();
-
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String _activeScreen = "Home";
+  Widget _selectedScreen = HomeContent();
   @override
   void initState() {
     super.initState();
     Future.microtask(() async {
       final canteenProvider =
-      Provider.of<CanteenProvider>(context, listen: false);
+          Provider.of<CanteenProvider>(context, listen: false);
       await canteenProvider.fetchCanteens(_canteenService);
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-    String _activeScreen = "Home";
-    Widget _selectedScreen =  HomeContent();
-
     void _showLogoutDialog() {
       showDialog(
         context: context,
@@ -66,10 +64,12 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       Navigator.pop(context);
     }
+
     Widget _buildDrawerItem(IconData icon, String title, Widget screen) {
       bool isSelected = _activeScreen == title;
       return ListTile(
-        leading: Icon(icon, color: isSelected ? Colors.blueAccent : Colors.black),
+        leading:
+            Icon(icon, color: isSelected ? Colors.blueAccent : Colors.black),
         title: Text(
           title,
           style: TextStyle(
@@ -82,65 +82,65 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       );
     }
-      return Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          title: Text(
-            _activeScreen,
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.blueAccent,
-          leading: IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              _scaffoldKey.currentState?.openDrawer();
-            },
-          ),
-        ),
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              DrawerHeader(
-                decoration: BoxDecoration(color: Colors.blueAccent),
-                child: const Text(
-                  'Actions',
-                  style: TextStyle(color: Colors.white, fontSize: 24),
-                ),
-              ),
-              _buildDrawerItem(Icons.home, "Home", HomeContent()),
-              _buildDrawerItem(Icons.category, "Add Category", const Addcanteen()),
 
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text(
-                  "Log out",
-                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                ),
-                onTap: _showLogoutDialog,
-              ),
-            ],
-          ),
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: Text(
+          _activeScreen,
+          style: const TextStyle(color: Colors.white),
         ),
-        body: _selectedScreen,
-      );
-    }
-
+        backgroundColor: Colors.blueAccent,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blueAccent),
+              child: const Text(
+                'Actions',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            _buildDrawerItem(Icons.home, "Home", HomeContent()),
+            _buildDrawerItem(Icons.add, "Add canteen", const Addcanteen()),
+            _buildDrawerItem(Icons.people, "Managers", ManagerScreen()),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                "Log out",
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+              onTap: _showLogoutDialog,
+            ),
+          ],
+        ),
+      ),
+      body: _selectedScreen,
+    );
   }
+}
 
 class HomeContent extends StatelessWidget {
   HomeContent({super.key});
+  final ScrollController _scrollController = ScrollController();
   final CanteenService _canteenService = CanteenService();
 
   @override
   Widget build(BuildContext context) {
-
     return Consumer<CanteenProvider>(
       builder: (context, canteenProvider, _) {
         if (canteenProvider.isLoading) {
           return const Center(
-            child: CircularProgressIndicator(color: Colors.blueAccent),
-          );
+              child: CircularProgressIndicator(color: Colors.blueAccent));
         }
         if (canteenProvider.hasError) {
           return Center(
@@ -161,55 +161,38 @@ class HomeContent extends StatelessWidget {
         }
 
         return Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              child: canteenProvider.canteens.isEmpty
-                  ? const Center(child: Text("No canteens available."))
-                  : Scrollbar(
+              child: Scrollbar(
                 interactive: true,
                 radius: const Radius.circular(8),
                 thickness: 5,
                 thumbVisibility: true,
-                trackVisibility: true,
+                controller: _scrollController, // Use a custom scroll controller
                 child: Padding(
                   padding: const EdgeInsets.all(15),
                   child: ListView.separated(
+                    controller: _scrollController, // Assign controller here
                     itemCount: canteenProvider.canteens.length,
                     itemBuilder: (context, index) {
                       final canteen = canteenProvider.canteens[index];
                       return CustomListTile(
+                        canteenProvider: canteenProvider,
+                        index: index,
                         canteenName: canteen['name'] ?? 'N/A',
                         collegeName: canteen['collegeName'] ?? 'N/A',
                         district: canteen['district'] ?? 'N/A',
-                        pincode: int.tryParse(
-                            canteen['pinCode'].toString()) ??
-                            0,
+                        pincode:
+                            int.tryParse(canteen['pinCode'].toString()) ?? 0,
                         imageUrl: canteen['imageUrl'] ??
                             'https://via.placeholder.com/150',
                         state: canteen['state'] ?? 'N/A',
                       );
                     },
                     separatorBuilder: (context, index) =>
-                    const SizedBox(height: 8),
+                        const SizedBox(height: 8),
                   ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 15, left: 15, right: 15),
-              child: CustomButton(
-                text: "Add new",
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Addcanteen()),
-                  );
-                  await Provider.of<CanteenProvider>(context, listen: false)
-                      .fetchCanteens(_canteenService);
-                },
-                icon: Icons.add,
               ),
             ),
           ],

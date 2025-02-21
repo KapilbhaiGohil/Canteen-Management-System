@@ -1,3 +1,4 @@
+import 'package:admin/providers/canteenProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -208,13 +209,15 @@ class ShowSnackbar {
   }
 }
 
-class CustomListTile extends StatelessWidget {
+class CustomListTile extends StatefulWidget {
   final String canteenName;
   final String collegeName;
   final String district;
   final String state;
   final int pincode;
   final String imageUrl;
+  final int index;
+  final CanteenProvider canteenProvider;
 
   const CustomListTile({
     super.key,
@@ -224,54 +227,144 @@ class CustomListTile extends StatelessWidget {
     required this.state,
     required this.pincode,
     required this.imageUrl,
+    required this.index,
+    required this.canteenProvider,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black, width: 1.4),
-        borderRadius: BorderRadius.circular(5),
-        color: Colors.black12,
-      ),
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          ClipRRect(
-            borderRadius:
-                BorderRadius.circular(5), // Rounded corners for the image
-            child: Image.network(
-              imageUrl,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover, // Ensure the image covers the area nicely
-              errorBuilder: (context, error, stackTrace) => const Icon(
-                Icons.error,
-                color: Colors.red,
-                size: 50,
-              ), // Show error icon if image fails to load
+  _CustomListTileState createState() => _CustomListTileState();
+}
+
+class _CustomListTileState extends State<CustomListTile> {
+  bool _isTapped = false;
+
+  void _confirmDelete(
+      BuildContext context, CanteenProvider canteenProvider, int index) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Confirm Delete"),
+          content: const Text("Are you sure you want to delete this canteen?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
             ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                print("Deleted canteen at index $index");
+                // await canteenProvider.deleteCanteen(index);
+              },
+              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showOptions(
+      BuildContext context, CanteenProvider canteenProvider, int index) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (context) {
+        return Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.blueAccent),
+              title: const Text("Update Canteen"),
+              onTap: () {
+                Navigator.pop(context);
+                print("Update Canteen at index $index");
+                // TODO: Open your update modal here
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.redAccent),
+              title: const Text("Delete Canteen"),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDelete(context, canteenProvider, index);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onLongPress: () =>
+          _showOptions(context, widget.canteenProvider, widget.index),
+      onTapDown: (_) => setState(() => _isTapped = true),
+      onTapUp: (_) => setState(() => _isTapped = false),
+      onTapCancel: () => setState(() => _isTapped = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.all(10),
+        width: double.infinity,
+        height: _isTapped ? 120 : 110,
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 193, 224, 239),
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(10),
+            topLeft: Radius.circular(10),
           ),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                canteenName,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+          border: Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
+          boxShadow: _isTapped
+              ? [
+                  BoxShadow(
+                    color: Colors.blueAccent.withOpacity(0.3),
+                    blurRadius: 10,
+                  )
+                ]
+              : [],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: Image.network(
+                widget.imageUrl,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.error,
+                  color: Colors.red,
+                  size: 50,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text("$collegeName, $district"),
-              const SizedBox(height: 4),
-              Text("$state, $pincode"),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(width: 15),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.canteenName,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text("${widget.collegeName}, ${widget.district}"),
+                const SizedBox(height: 4),
+                Text("${widget.state}, ${widget.pincode}"),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

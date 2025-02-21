@@ -1,38 +1,39 @@
 import 'package:flutter/material.dart';
 
-import '../components/empcard.dart';
+import '../components/manCard.dart';
 import '../widgets/widgets.dart';
 
-class EmployeesScreen extends StatefulWidget {
-  const EmployeesScreen({super.key});
+class ManagerScreen extends StatefulWidget {
+  const ManagerScreen({super.key});
 
   @override
-  _EmployeesScreenState createState() => _EmployeesScreenState();
+  _ManagerScreenState createState() => _ManagerScreenState();
 }
 
-class _EmployeesScreenState extends State<EmployeesScreen> {
+class _ManagerScreenState extends State<ManagerScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  String _selectedRole = 'Provider';
-  bool _isEditing = false; // Track whether it's an edit operation
-  String? _editingEmployeeId; // Store the ID of the employee being edited
+  String? _selectedCanteen; // No default selection
+  bool _isEditing = false;
+  String? _editingEmployeeId;
 
-  void _showAddEmployeeModal(BuildContext context, {String? name, String? email, String? role, String? employeeId}) {
+  void _showAddEmployeeModal(BuildContext context,
+      {String? name, String? email, String? role, String? employeeId}) {
     setState(() {
-      _isEditing = employeeId != null; // If employeeId exists, it's an edit operation
+      _isEditing = employeeId != null;
       _editingEmployeeId = employeeId;
       _nameController.text = name ?? "";
       _emailController.text = email ?? "";
-      _passwordController.text = ""; // Password shouldn't be prefilled
-      _selectedRole = role ?? "Provider";
+      _passwordController.text = "";
+      _selectedCanteen = role; // Can be null for no selection
     });
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -48,7 +49,11 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
             children: [
               Text(
                 _isEditing ? "Edit Employee" : "Add Employee",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
               ),
               const SizedBox(height: 10),
 
@@ -85,15 +90,18 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
 
               // Role Dropdown
               CustomDropdown(
-                value: _selectedRole,
-                hintText: "Select Role",
-                items: ["Provider", "Manager", "Chef"],
+                value: _selectedCanteen,
+                hintText: "Select Canteen",
+                items: ["Canteen1", "Canteen2", "Canteen3"],
                 onChanged: (value) {
                   setState(() {
-                    _selectedRole = value!;
+                    _selectedCanteen = value;
                   });
                 },
+                validator: (value) =>
+                    value == null ? 'Please select a canteen' : null,
               ),
+
               const SizedBox(height: 20),
 
               // Submit Button
@@ -101,10 +109,12 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
                 text: _isEditing ? "Update Employee" : "Add Employee",
                 onPressed: () {
                   if (_isEditing) {
-                    print("Updated Employee: ${_nameController.text}, Role: $_selectedRole, ID: $_editingEmployeeId");
+                    print(
+                        "Updated Employee: ${_nameController.text}, Role: $_selectedCanteen, ID: $_editingEmployeeId");
                     // Call API to update employee
                   } else {
-                    print("Added Employee: ${_nameController.text}, Role: $_selectedRole");
+                    print(
+                        "Added Employee: ${_nameController.text}, Role: $_selectedCanteen");
                     // Call API to add employee
                   }
                   Navigator.pop(context); // Close modal
@@ -127,18 +137,30 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
           margin: const EdgeInsets.all(15),
           child: Column(
             children: [
-              EmployeeCard(
+              ManagerCard(
                 name: "John Doe",
                 email: "john@example.com",
-                role: "Manager",
-                onEdit: () => _showAddEmployeeModal(context, name: "John Doe", email: "john@example.com", role: "Manager", employeeId: "123"),
+                canteenName: "Canteen1",
+                onEdit: () => _showAddEmployeeModal(
+                  context,
+                  name: "John Doe",
+                  email: "john@example.com",
+                  role: "Canteen1",
+                  employeeId: "123",
+                ),
               ),
               const SizedBox(height: 8),
-              EmployeeCard(
+              ManagerCard(
                 name: "Jane Smith",
                 email: "jane@example.com",
-                role: "Chef",
-                onEdit: () => _showAddEmployeeModal(context, name: "Jane Smith", email: "jane@example.com", role: "Chef", employeeId: "456"),
+                canteenName: "Canteen2",
+                onEdit: () => _showAddEmployeeModal(
+                  context,
+                  name: "Jane Smith",
+                  email: "jane@example.com",
+                  role: "Canteen2",
+                  employeeId: "456",
+                ),
               ),
             ],
           ),
