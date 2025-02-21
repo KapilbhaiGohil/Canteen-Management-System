@@ -2,6 +2,8 @@ import 'package:admin/providers/canteenProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../screens/addCanteen.dart';
+
 class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String hintText;
@@ -217,7 +219,9 @@ class CustomListTile extends StatefulWidget {
   final int pincode;
   final String imageUrl;
   final int index;
+  final String canteenId;
   final CanteenProvider canteenProvider;
+  final Function(String, Widget, [bool]) updateScreen;
 
   const CustomListTile({
     super.key,
@@ -229,6 +233,8 @@ class CustomListTile extends StatefulWidget {
     required this.imageUrl,
     required this.index,
     required this.canteenProvider,
+    required this.canteenId,
+    required this.updateScreen,
   });
 
   @override
@@ -238,14 +244,13 @@ class CustomListTile extends StatefulWidget {
 class _CustomListTileState extends State<CustomListTile> {
   bool _isTapped = false;
 
-  void _confirmDelete(
-      BuildContext context, CanteenProvider canteenProvider, int index) {
+  void _confirmDelete(BuildContext context, CanteenProvider canteenProvider) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text("Confirm Delete"),
-          content: const Text("Are you sure you want to delete this canteen?"),
+          content: Text("Are you sure you want to delete ${widget.canteenName}?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -253,9 +258,9 @@ class _CustomListTileState extends State<CustomListTile> {
             ),
             TextButton(
               onPressed: () async {
+                await canteenProvider.deleteCanteen(canteenId: widget.canteenId);
                 Navigator.pop(context);
-                print("Deleted canteen at index $index");
-                // await canteenProvider.deleteCanteen(index);
+                print("Deleted canteen: ${widget.canteenId}");
               },
               child: const Text("Delete", style: TextStyle(color: Colors.red)),
             ),
@@ -265,8 +270,26 @@ class _CustomListTileState extends State<CustomListTile> {
     );
   }
 
-  void _showOptions(
-      BuildContext context, CanteenProvider canteenProvider, int index) {
+  void _updateCanteen(BuildContext context) {
+    widget.updateScreen(
+      "Update Canteen",
+      Addcanteen(
+        updateScreen: widget.updateScreen,
+        canteen: {
+          '_id': widget.canteenId,
+          'name': widget.canteenName,
+          'collegeName': widget.collegeName,
+          'district': widget.district,
+          'state': widget.state,
+          'pinCode': widget.pincode.toString(),
+          'imageUrl': widget.imageUrl,
+        },
+      ),
+      false,
+    );
+  }
+
+  void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -280,8 +303,7 @@ class _CustomListTileState extends State<CustomListTile> {
               title: const Text("Update Canteen"),
               onTap: () {
                 Navigator.pop(context);
-                print("Update Canteen at index $index");
-                // TODO: Open your update modal here
+                _updateCanteen(context);
               },
             ),
             ListTile(
@@ -289,7 +311,7 @@ class _CustomListTileState extends State<CustomListTile> {
               title: const Text("Delete Canteen"),
               onTap: () {
                 Navigator.pop(context);
-                _confirmDelete(context, canteenProvider, index);
+                _confirmDelete(context, widget.canteenProvider);
               },
             ),
           ],
@@ -301,8 +323,7 @@ class _CustomListTileState extends State<CustomListTile> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: () =>
-          _showOptions(context, widget.canteenProvider, widget.index),
+      onLongPress: () => _showOptions(context),
       onTapDown: (_) => setState(() => _isTapped = true),
       onTapUp: (_) => setState(() => _isTapped = false),
       onTapCancel: () => setState(() => _isTapped = false),
@@ -321,11 +342,11 @@ class _CustomListTileState extends State<CustomListTile> {
           border: Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
           boxShadow: _isTapped
               ? [
-                  BoxShadow(
-                    color: Colors.blueAccent.withOpacity(0.3),
-                    blurRadius: 10,
-                  )
-                ]
+            BoxShadow(
+              color: Colors.blueAccent.withOpacity(0.3),
+              blurRadius: 10,
+            )
+          ]
               : [],
         ),
         child: Row(
@@ -373,7 +394,7 @@ class _CustomListTileState extends State<CustomListTile> {
 class CustomDropdown extends StatelessWidget {
   final String? value;
   final String hintText;
-  final List<String> items;
+  final List<Map<String, String>> items; // ✅ Accepts list of maps
   final Function(String?)? onChanged;
   final FormFieldValidator<String>? validator;
 
@@ -411,10 +432,10 @@ class CustomDropdown extends StatelessWidget {
           borderRadius: BorderRadius.circular(5),
         ),
       ),
-      items: items.map((String item) {
+      items: items.map((canteen) {
         return DropdownMenuItem<String>(
-          value: item,
-          child: Text(item),
+          value: canteen['id'], // ✅ Store ID
+          child: Text(canteen['name']!), // ✅ Display Name
         );
       }).toList(),
       onChanged: onChanged,

@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User, Canteen } from '../models/models.js';
+import { authenticate, authorize } from '../middlewares/middlewares.js';
 
 const authRouter = express.Router();
 
@@ -16,7 +17,7 @@ const generateTokens = (user) => {
     return { accessToken, refreshToken };
 };
 
-authRouter.post('/register', async (req, res) => {
+authRouter.post('/register',async (req, res) => {
     try {
         console.log("Register request received:", req.body);
         
@@ -154,7 +155,6 @@ authRouter.post('/refreshTokens', async (req, res) => {
     }
 });
 
-// Logout
 authRouter.post('/logout', async (req, res) => {
     try {
         console.log("Logout request received:", req.body);
@@ -206,6 +206,129 @@ authRouter.post('/userLogin', async (req, res) => {
         return res.status(200).json({ message: "Login successful", userId: user._id });
     } catch (err) {
         console.error("UserLogin error:", err);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+authRouter.get('/managers',authenticate,authorize(['admin']), async (req, res) => {
+    try {
+        console.log("Fetching managers with their canteen names...");
+
+        const managers = await User.find({ role: 'manager' }).populate('canteenId', 'name');
+
+        const managerList = managers.map(manager => ({
+            id: manager._id,
+            name: manager.name,
+            email: manager.email,
+            canteenName: manager.canteenId ? manager.canteenId.name : 'Not Assigned',
+            canteenId:manager.canteenId._id
+        }));
+
+        console.log("Managers fetched successfully:", managerList);
+        return res.status(200).json(managerList);
+    } catch (err) {
+        console.error("Error fetching managers:", err);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+authRouter.post('/registerUser',authenticate,authorize(['admin']),async (req, res) => {
+    try {
+        console.log("Register request received:", req.body);
+        
+        const { name, email, password, role, canteenId } = req.body;
+        if (!name || !email || !password || !role) {
+            console.log("Missing fields in registration");
+            return res.status(400).json({ error: 'All fields are required!' });
+        }
+
+        if (canteenId) {
+            const canteen = await Canteen.findById(canteenId);
+            if (!canteen) {
+                console.log("Invalid canteen ID");
+                return res.status(404).json({ error: "Invalid canteen ID." });
+            }
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            console.log("User already exists:", email);
+            return res.status(409).json({ error: 'User with this email already exists.' });
+        }
+ 
+        const user = new User({ name, email, password, role, canteenId, refreshTokens: [] });
+        console.log(user)
+        await user.save();
+
+        console.log("User registered successfully:", user._id);
+        return res.status(201).json({ message: "User registered successfully!" });
+    } catch (err) {
+        console.error("Register error:", err);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+authRouter.put('/updateUser', authenticate, authorize(['admin']), async (req, res) => {
+    try {
+        console.log("Update manager request received:", req.body);
+
+        const { managerId, name, email, role, canteenId } = req.body;
+        if (!managerId || !name || !email || !role) {
+            console.log("Missing fields in update request");
+            return res.status(400).json({ error: 'All fields are required!' });
+        }
+
+        const manager = await User.findById(managerId);
+        if (!manager) {
+            console.log("Manager not found");
+            return res.status(404).json({ error: 'Manager not found.' });
+        }
+
+        if (canteenId) {
+            const canteen = await Canteen.findById(canteenId);
+            if (!canteen) {
+                console.log("Invalid canteen ID");
+                return res.status(404).json({ error: "Invalid canteen ID." });
+            }
+        }
+
+        manager.name = name;
+        manager.email = email;
+        manager.role = role;
+        manager.canteenId = canteenId;
+
+        await manager.save();
+
+        console.log("Manager updated successfully:", manager._id);
+        return res.status(200).json({ message: "Manager updated successfully!" });
+    } catch (err) {
+        console.error("Update error:", err);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+authRouter.delete('/deleteUser', authenticate, authorize(['admin']), async (req, res) => {
+    try {
+        console.log("Delete manager request received:", req.body);
+
+        const { managerId } = req.body;
+        if (!managerId) {
+            console.log("Manager ID is required");
+            return res.status(400).json({ error: 'Manager ID is required!' });
+        }
+
+        const manager = await User.findById(managerId);
+        if (!manager) {
+            console.log("Manager not found");
+            return res.status(404).json({ error: 'Manager not found.' });
+        }
+
+        await User.findByIdAndDelete(managerId);
+
+        console.log("Manager deleted successfully:", managerId);
+        return res.status(200).json({ message: "Manager deleted successfully!" });
+    } catch (err) {
+        console.error("Delete error:", err);
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });

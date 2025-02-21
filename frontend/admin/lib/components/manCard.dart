@@ -5,13 +5,13 @@ class ManagerCard extends StatefulWidget {
   final String email;
   final String canteenName;
   final VoidCallback onEdit;
-
+  final VoidCallback onDelete;
   const ManagerCard({
     super.key,
     required this.name,
     required this.email,
     required this.canteenName,
-    required this.onEdit,
+    required this.onEdit, required this.onDelete,
   });
 
   @override
@@ -24,7 +24,7 @@ class _ManagerCardState extends State<ManagerCard> {
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
       builder: (context) {
@@ -46,7 +46,7 @@ class _ManagerCardState extends State<ManagerCard> {
                 title: Text("Delete Employee"),
                 onTap: () {
                   Navigator.pop(context);
-                  _confirmDelete(context);
+                  widget.onDelete();
                 },
               ),
             ],
@@ -56,31 +56,6 @@ class _ManagerCardState extends State<ManagerCard> {
     );
   }
 
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Confirm Delete"),
-          content: Text("Are you sure you want to delete ${widget.name}?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), // Cancel delete
-              child: Text("Cancel", style: TextStyle(color: Colors.grey)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                print("Deleted Employee: ${widget.name}");
-                // Call API to delete employee here
-              },
-              child: Text("Delete", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,11 +72,11 @@ class _ManagerCardState extends State<ManagerCard> {
         height: _isTapped ? 120 : 110,
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 193, 224, 239),
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(10),
             topLeft: Radius.circular(10),
           ),
-          border: Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
+          border: const Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
           boxShadow: _isTapped
               ? [
                   BoxShadow(
@@ -121,7 +96,7 @@ class _ManagerCardState extends State<ManagerCard> {
               ),
               child: Text(
                 widget.canteenName,
-                style: TextStyle(
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold),
@@ -129,14 +104,14 @@ class _ManagerCardState extends State<ManagerCard> {
             ),
             Text(
               widget.name,
-              style: TextStyle(
+              style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.blueAccent),
             ),
             Text(
               widget.email,
-              style: TextStyle(
+              style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: Colors.blueAccent),

@@ -1,14 +1,28 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt'
 
 const userSchema = new mongoose.Schema({
-    deviceId: { type: String, unique: true }, 
-    role: { type: String, enum: ['foodProvider', 'manager', 'admin', 'foodMaker','user'], required: true },
-    canteenId: { type: mongoose.Schema.Types.ObjectId, ref: 'Canteen' },
-    refreshTokens: [{ type: String }]
+    deviceId:{type:String},
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, enum: ['foodProvider','manager', 'admin', 'foodMaker','user'], required: true },
+    canteenId: { type: mongoose.Schema.Types.ObjectId, ref: 'Canteen'},
+    refreshTokens: [{ type: String }],
 }, { timestamps: true });
 
+userSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) return next();
+    this.password = await bcrypt.hash(this.password,14);
+    next();
+})
+userSchema.methods.comparePassword = function (password) {
+    return bcrypt.compare(password, this.password);
+};
+
+
 const canteenSchema = new mongoose.Schema({
-    name: { type: String, required: true },
+    name: { type: String, required: true,unique:true},
     collegeName: { type: String },
     imageUrl: { type: String },
     state: { type: String, required: true },
@@ -26,7 +40,7 @@ const itemSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const categorySchema = new mongoose.Schema({
-    name: { type: String, required: true },
+    name: { type: String, required: true},
     canteenId: { type: mongoose.Schema.Types.ObjectId, ref: 'Canteen', required: true },
     items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
     desc: { type: String, required: true }

@@ -134,7 +134,6 @@ class AuthProvider with ChangeNotifier {
     print("Logging out...");
     final refreshToken = await _secureStorage.read(key: 'refreshToken');
 
-    // Clear tokens from local storage before calling logout API
     await _secureStorage.delete(key: 'accessToken');
     await _secureStorage.delete(key: 'refreshToken');
 

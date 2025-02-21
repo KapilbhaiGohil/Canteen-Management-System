@@ -1,5 +1,5 @@
 import 'package:admin/providers/authProvider.dart';
-import 'package:admin/services/canteen-service.dart';
+import 'package:admin/services/canteenService.dart';
 import 'package:admin/widgets/widgets.dart';
 import 'package:admin/screens/home.dart';
 import 'package:flutter/material.dart';
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
                   _isLoading
-                      ? const CircularProgressIndicator()
+                      ? const CircularProgressIndicator(color: Colors.blueAccent,)
                       : CustomButton(
                           text: 'Submit',
                           backgroundColor: Colors.blueAccent,

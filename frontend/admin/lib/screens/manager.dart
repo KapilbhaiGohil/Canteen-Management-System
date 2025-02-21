@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../components/manCard.dart';
 import '../widgets/widgets.dart';
+import '../providers/canteenProvider.dart';
 
 class ManagerScreen extends StatefulWidget {
   const ManagerScreen({super.key});
@@ -15,19 +17,29 @@ class _ManagerScreenState extends State<ManagerScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  String? _selectedCanteen; // No default selection
+  String? _selectedCanteen;
   bool _isEditing = false;
-  String? _editingEmployeeId;
+  String? _editingManagerId;
 
-  void _showAddEmployeeModal(BuildContext context,
-      {String? name, String? email, String? role, String? employeeId}) {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final provider = Provider.of<CanteenProvider>(context, listen: false);
+      provider.fetchCanteens();
+      provider.fetchManagers();
+    });
+  }
+
+  void _showAddManagerModal(BuildContext context,
+      {String? name, String? email, String? canteenId, String? managerId}) {
     setState(() {
-      _isEditing = employeeId != null;
-      _editingEmployeeId = employeeId;
+      _isEditing = managerId != null;
+      _editingManagerId = managerId;
       _nameController.text = name ?? "";
       _emailController.text = email ?? "";
       _passwordController.text = "";
-      _selectedCanteen = role; // Can be null for no selection
+      _selectedCanteen = canteenId;
     });
 
     showModalBottomSheet(
@@ -48,7 +60,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _isEditing ? "Edit Employee" : "Add Employee",
+                _isEditing ? "Edit Manager" : "Add Manager",
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -57,15 +69,13 @@ class _ManagerScreenState extends State<ManagerScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Employee Name Field
               CustomTextFormField(
                 controller: _nameController,
-                hintText: "Enter employee name",
-                labelText: "Employee Name",
+                hintText: "Enter manager name",
+                labelText: "Manager Name",
               ),
               const SizedBox(height: 10),
 
-              // Email Field
               CustomTextFormField(
                 controller: _emailController,
                 hintText: "Enter email",
@@ -74,7 +84,6 @@ class _ManagerScreenState extends State<ManagerScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Password Field (Only required for adding new employee)
               if (!_isEditing)
                 Column(
                   children: [
@@ -88,36 +97,70 @@ class _ManagerScreenState extends State<ManagerScreen> {
                   ],
                 ),
 
-              // Role Dropdown
-              CustomDropdown(
-                value: _selectedCanteen,
-                hintText: "Select Canteen",
-                items: ["Canteen1", "Canteen2", "Canteen3"],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCanteen = value;
-                  });
+              Consumer<CanteenProvider>(
+                builder: (context, provider, child) {
+                  return CustomDropdown(
+                    value: _selectedCanteen,
+                    hintText: "Select Canteen",
+                    items: provider.canteens.map((canteen) {
+                      return {
+                        'id': canteen['_id'].toString(),
+                        'name': canteen['name'].toString(),
+                      };
+                    }).toList().cast<Map<String, String>>(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCanteen = value;
+                      });
+                    },
+                  );
                 },
-                validator: (value) =>
-                    value == null ? 'Please select a canteen' : null,
               ),
-
               const SizedBox(height: 20),
 
-              // Submit Button
               CustomButton(
-                text: _isEditing ? "Update Employee" : "Add Employee",
-                onPressed: () {
-                  if (_isEditing) {
-                    print(
-                        "Updated Employee: ${_nameController.text}, Role: $_selectedCanteen, ID: $_editingEmployeeId");
-                    // Call API to update employee
-                  } else {
-                    print(
-                        "Added Employee: ${_nameController.text}, Role: $_selectedCanteen");
-                    // Call API to add employee
+                text: _isEditing ? "Update Manager" : "Add Manager",
+                onPressed: () async {
+                  final provider =
+                  Provider.of<CanteenProvider>(context, listen: false);
+
+                  if (_selectedCanteen == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Please select a canteen")),
+                    );
+                    return;
                   }
-                  Navigator.pop(context); // Close modal
+
+                  bool success;
+                  if (_isEditing) {
+                    success = await provider.updateManager(
+                      managerId: _editingManagerId!,
+                      name: _nameController.text,
+                      email: _emailController.text,
+                      canteenId: _selectedCanteen!,
+                      role: 'manager',
+                    );
+                  } else {
+                    success = await provider.registerManager(
+                      name: _nameController.text,
+                      email: _emailController.text,
+                      password: _passwordController.text,
+                      canteenId: _selectedCanteen!,
+                      role: 'manager',
+                    );
+                  }
+
+                  if (success) {
+                    provider.fetchManagers();
+                    Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(_isEditing
+                              ? "Failed to update manager"
+                              : "Failed to add manager")),
+                    );
+                  }
                 },
               ),
             ],
@@ -127,54 +170,84 @@ class _ManagerScreenState extends State<ManagerScreen> {
     );
   }
 
+  Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Deletion"),
+        content:
+        const Text("Are you sure you want to delete this manager?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child:
+            const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          height: double.infinity,
-          width: double.infinity,
-          margin: const EdgeInsets.all(15),
-          child: Column(
-            children: [
-              ManagerCard(
-                name: "John Doe",
-                email: "john@example.com",
-                canteenName: "Canteen1",
-                onEdit: () => _showAddEmployeeModal(
-                  context,
-                  name: "John Doe",
-                  email: "john@example.com",
-                  role: "Canteen1",
-                  employeeId: "123",
-                ),
+    return Consumer<CanteenProvider>(
+      builder: (context, provider, child) {
+        return Stack(
+          children: [
+            Container(
+              height: double.infinity,
+              width: double.infinity,
+              margin: const EdgeInsets.all(15),
+              child: provider.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : provider.managers.isEmpty
+                  ? const Center(child: Text("No managers found"))
+                  : ListView.builder(
+                itemCount: provider.managers.length,
+                itemBuilder: (context, index) {
+                  final manager = provider.managers[index];
+                  return ManagerCard(
+                    name: manager['name'],
+                    email: manager['email'],
+                    canteenName: manager['canteenName'],
+                    onEdit: () => _showAddManagerModal(
+                      context,
+                      name: manager['name'],
+                      email: manager['email'],
+                      canteenId: manager['canteenId'],
+                      managerId: manager['id'],
+                    ),
+                    onDelete: () async {
+                      bool confirmDelete =
+                      await _showDeleteConfirmationDialog(
+                          context);
+                      if (confirmDelete) {
+                        await provider.deleteManager(
+                            managerId: manager['id']);
+                        provider.fetchManagers();
+                      }
+                    },
+                  );
+                },
               ),
-              const SizedBox(height: 8),
-              ManagerCard(
-                name: "Jane Smith",
-                email: "jane@example.com",
-                canteenName: "Canteen2",
-                onEdit: () => _showAddEmployeeModal(
-                  context,
-                  name: "Jane Smith",
-                  email: "jane@example.com",
-                  role: "Canteen2",
-                  employeeId: "456",
-                ),
+            ),
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: FloatingActionButton(
+                onPressed: () => _showAddManagerModal(context),
+                backgroundColor: Colors.blueAccent,
+                child: const Icon(Icons.add, color: Colors.white),
               ),
-            ],
-          ),
-        ),
-        Positioned(
-          bottom: 20,
-          right: 20,
-          child: FloatingActionButton(
-            onPressed: () => _showAddEmployeeModal(context),
-            backgroundColor: Colors.blueAccent,
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
