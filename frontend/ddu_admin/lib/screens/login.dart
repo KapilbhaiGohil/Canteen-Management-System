@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
                   _isLoading
-                      ? const CircularProgressIndicator()
+                      ? const CircularProgressIndicator(color: Colors.blueAccent,)
                       : CustomButton(
                           text: 'Submit',
                           backgroundColor: Colors.blueAccent,

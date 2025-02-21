@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../components/category.dart';
+import '../providers/canteenProvider.dart';
 import 'addCategory.dart';
 import 'addItem.dart';
 import 'empolyee.dart';
@@ -14,18 +16,29 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _activeScreen = "Home";
-  Widget _selectedScreen = const HomeContent();
+  late Widget _selectedScreen;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
-  void _updateScreen(String screenName, Widget screenWidget) {
+  void updateScreen(String screenName, Widget screenWidget, [bool shouldPop = true]) {
     setState(() {
       _activeScreen = screenName;
       _selectedScreen = screenWidget;
-      _isSearching = false;
-      _searchController.clear();
     });
-    Navigator.pop(context);
+    if (shouldPop) {
+      Navigator.pop(context);
+    }
+  }
+ @override
+  void initState() {
+    super.initState();
+    _selectedScreen = HomeContent(updateScreen: updateScreen);
+
+    Future.microtask(() async {
+      final canteenProvider =
+      Provider.of<CanteenProvider>(context, listen: false);
+      await canteenProvider.loadCategories();
+    });
   }
 
   void _toggleSearch() {
@@ -79,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(color: Colors.white),
           cursorColor: Colors.white,
           onChanged: (value) {
-            // Handle search logic (e.g., filter items)
             print("Searching for: $value");
           },
         )
@@ -114,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
-            _buildDrawerItem(Icons.home, "Home", const HomeContent()),
+            _buildDrawerItem(Icons.home, "Home", HomeContent(updateScreen: updateScreen,)),
             _buildDrawerItem(Icons.category, "Add Category", const AddCategoryScreen()),
             _buildDrawerItem(Icons.fastfood, "Add Item", const AddItemScreen()),
             _buildDrawerItem(Icons.people, "Employees", const EmployeesScreen()),
@@ -145,30 +157,59 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       onTap: () {
-        _updateScreen(title, screen);
+        updateScreen(title, screen);
       },
     );
   }
 }
-
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
 
+  const HomeContent({super.key, required this.updateScreen});
+  final Function (String,Widget,[bool])updateScreen;
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        children: [
-          Category(categoryName: "category"),
-          const SizedBox(height: 8),
-          Category(categoryName: "category"),
-          const SizedBox(height: 8),
-          Category(categoryName: "category"),
-          const SizedBox(height: 8),
-          Category(categoryName: "category"),
-        ],
-      ),
+    return Consumer<CanteenProvider>(
+      builder: (context, canteenProvider, child) {
+        if (canteenProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (canteenProvider.categories.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("No categories available.", style: TextStyle(fontSize: 18)),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white
+                  ),
+                  onPressed: () {
+                    updateScreen("Add Category",AddCategoryScreen(),false);
+                  },
+                  child: const Text("Create New Category"),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            children: canteenProvider.categories.map((category) {
+              return Column(
+                children: [
+                  Category(categoryName: category['name']),
+                  const SizedBox(height: 8),
+                ],
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 }

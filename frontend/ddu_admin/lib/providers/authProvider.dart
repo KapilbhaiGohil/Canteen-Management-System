@@ -10,10 +10,12 @@ class AuthProvider with ChangeNotifier {
   String? _accessToken;
   bool _isAuthenticated = false;
   bool _isLoading = true;
+  Map<String, dynamic>? _canteen; // Store canteen details
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get accessToken => _accessToken;
+  Map<String, dynamic>? get canteen => _canteen; // Getter for canteen
 
   Future<void> _saveTokens(String accessToken, String refreshToken) async {
     try {
@@ -22,6 +24,30 @@ class AuthProvider with ChangeNotifier {
       print("Tokens saved successfully.");
     } catch (error) {
       print("Error saving tokens: $error");
+    }
+  }
+
+  Future<void> _saveCanteen(Map<String, dynamic>? canteenData) async {
+    try {
+      if (canteenData != null) {
+        await _secureStorage.write(
+            key: 'canteen', value: jsonEncode(canteenData));
+        print("Canteen details saved successfully.");
+      }
+    } catch (error) {
+      print("Error saving canteen details: $error");
+    }
+  }
+
+  Future<void> _loadCanteen() async {
+    try {
+      String? canteenData = await _secureStorage.read(key: 'canteen');
+      if (canteenData != null) {
+        _canteen = jsonDecode(canteenData);
+        print("Canteen loaded successfully.");
+      }
+    } catch (error) {
+      print("Error loading canteen details: $error");
     }
   }
 
@@ -47,8 +73,19 @@ class AuthProvider with ChangeNotifier {
         );
 
         if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
           print("Access token is valid.");
           _isAuthenticated = true;
+
+          if (responseData.containsKey('canteen')) {
+            _canteen = responseData['canteen'];
+            await _saveCanteen(_canteen);
+          } else {
+            print("No canteen associated with this user.");
+            _canteen = null;
+          }
+
+          await _loadCanteen();
         } else if (response.statusCode == 403 || response.statusCode == 401) {
           print("Access token expired or invalid. Attempting refresh...");
           await refreshToken();
@@ -65,40 +102,52 @@ class AuthProvider with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+Future<void> refreshToken() async {
+  print("Attempting to refresh token...");
+  final refreshToken = await _secureStorage.read(key: 'refreshToken');
 
-  Future<void> refreshToken() async {
-    print("Attempting to refresh token...");
-    final refreshToken = await _secureStorage.read(key: 'refreshToken');
-
-    if (refreshToken == null) {
-      print("No refresh token found. Logging out...");
-      await logout();
-      return;
-    }
-
-    final url = Uri.parse('$baseUrl/auth/refreshTokens');
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        _accessToken = responseData['accessToken'];
-        await _saveTokens(_accessToken!, responseData['refreshToken']);
-        _isAuthenticated = true;
-        print("Token refresh successful.");
-      } else {
-        print("Failed to refresh token. Logging out...");
-        await logout();
-      }
-    } catch (error) {
-      print("Refresh token error: $error");
-      await logout();
-    }
+  if (refreshToken == null) {
+    print("No refresh token found. Logging out...");
+    await logout();
+    return;
   }
+
+  final url = Uri.parse('$baseUrl/auth/refreshTokens');
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'refreshToken': refreshToken}),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      _accessToken = responseData['accessToken'];
+      await _saveTokens(_accessToken!, responseData['refreshToken']);
+      _isAuthenticated = true;
+      print("Token refresh successful.");
+
+      // Check if canteen data is available and save it
+      if (responseData.containsKey('canteen')) {
+        _canteen = responseData['canteen'];
+        await _saveCanteen(_canteen);
+        print("Canteen details updated after token refresh.");
+      } else {
+        print("No canteen associated with this user.");
+        _canteen = null;
+      }
+
+      notifyListeners();
+    } else {
+      print("Failed to refresh token. Logging out...");
+      await logout();
+    }
+  } catch (error) {
+    print("Refresh token error: $error");
+    await logout();
+  }
+}
+
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     print("Attempting login for email: $email");
@@ -117,6 +166,15 @@ class AuthProvider with ChangeNotifier {
         String refreshToken = responseData['refreshToken'];
         _isAuthenticated = true;
         await _saveTokens(_accessToken!, refreshToken);
+
+        if (responseData.containsKey('canteen')) {
+          _canteen = responseData['canteen'];
+          await _saveCanteen(_canteen);
+        } else {
+          print("No canteen associated with this user.");
+          _canteen = null;
+        }
+
         notifyListeners();
         print("Login successful.");
         return {"isOk": true, "message": "Successful login."};
@@ -137,11 +195,13 @@ class AuthProvider with ChangeNotifier {
     print("Logging out...");
     final refreshToken = await _secureStorage.read(key: 'refreshToken');
 
-    // Clear tokens from local storage before calling logout API
+    // Clear tokens and canteen from local storage before calling logout API
     await _secureStorage.delete(key: 'accessToken');
     await _secureStorage.delete(key: 'refreshToken');
+    await _secureStorage.delete(key: 'canteen');
 
     _accessToken = null;
+    _canteen = null;
     _isAuthenticated = false;
     notifyListeners();
 

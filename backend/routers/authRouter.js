@@ -50,7 +50,6 @@ authRouter.post('/register',async (req, res) => {
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });
-
 authRouter.post('/login', async (req, res) => {
     try {
         console.log("Login request received:", req.body);
@@ -61,7 +60,7 @@ authRouter.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required.' });
         }
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).populate('canteenId'); // Fetch canteen details
         if (!user) {
             console.log("User not found:", email);
             return res.status(401).json({ error: 'Invalid email or password.' });
@@ -78,7 +77,11 @@ authRouter.post('/login', async (req, res) => {
         await user.save();
 
         console.log("Login successful for user:", user._id);
-        return res.status(200).json(tokens);
+
+        return res.status(200).json({
+            ...tokens,
+            canteen: user.canteenId || null
+        });
     } catch (err) {
         console.error("Login error:", err);
         return res.status(500).json({ error: 'Internal server error.' });
@@ -103,14 +106,17 @@ authRouter.post('/validateToken', async (req, res) => {
                 return res.status(403).json({ error: "Invalid or expired access token." });
             }
             
-            const user = await User.findById(decoded.id);
+            const user = await User.findById(decoded.id).populate('canteenId'); // Fetch canteen details
             if (!user) {
                 console.log("User not found for this token.");
                 return res.status(404).json({ error: "User not found." });
             }
-
+            
             console.log("Access token is valid for user:", user._id);
-            return res.status(200).json({ message: "Access token is valid." });
+            return res.status(200).json({
+                message: "Access token is valid.",
+                canteen: user.canteenId || null 
+            });
         });
     } catch (err) {
         console.error("Token validation error:", err);
