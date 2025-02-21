@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['foodProvider','manager', 'admin', 'foodMaker','user'], required: true },
+    role: { type: String, enum: ['foodProvider','manager', 'admin', 'Chef','user'], required: true },
     canteenId: { type: mongoose.Schema.Types.ObjectId, ref: 'Canteen'},
     refreshTokens: [{ type: String }],
 }, { timestamps: true });

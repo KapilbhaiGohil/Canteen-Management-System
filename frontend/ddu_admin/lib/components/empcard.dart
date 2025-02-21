@@ -1,10 +1,13 @@
+import 'package:ddu_admin/providers/canteenProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class EmployeeCard extends StatefulWidget {
   final String name;
   final String email;
   final String role;
   final VoidCallback onEdit;
+  final String employeeId;
 
   const EmployeeCard({
     super.key,
@@ -12,6 +15,7 @@ class EmployeeCard extends StatefulWidget {
     required this.email,
     required this.role,
     required this.onEdit,
+    required this.employeeId,
   });
 
   @override
@@ -38,7 +42,7 @@ class _EmployeeCardState extends State<EmployeeCard> {
                 title: Text("Edit Employee"),
                 onTap: () {
                   Navigator.pop(context);
-                  widget.onEdit(); // Open Edit Modal
+                  widget.onEdit();
                 },
               ),
               ListTile(
@@ -65,14 +69,15 @@ class _EmployeeCardState extends State<EmployeeCard> {
           content: Text("Are you sure you want to delete ${widget.name}?"),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context), // Cancel delete
+              onPressed: () => Navigator.pop(context),
               child: Text("Cancel", style: TextStyle(color: Colors.grey)),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
                 print("Deleted Employee: ${widget.name}");
-                // Call API to delete employee here
+                Provider.of<CanteenProvider>(context, listen: false)
+                    .removeUser(widget.employeeId);
               },
               child: Text("Delete", style: TextStyle(color: Colors.red)),
             ),
@@ -85,7 +90,7 @@ class _EmployeeCardState extends State<EmployeeCard> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: () => _showOptions(context), // Show options on long press
+      onLongPress: () => _showOptions(context),
       onTapDown: (_) => setState(() => _isTapped = true),
       onTapUp: (_) => setState(() => _isTapped = false),
       onTapCancel: () => setState(() => _isTapped = false),
@@ -103,7 +108,10 @@ class _EmployeeCardState extends State<EmployeeCard> {
           ),
           border: Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
           boxShadow: _isTapped
-              ? [BoxShadow(color: Colors.blueAccent.withOpacity(0.3), blurRadius: 10)]
+              ? [
+                  BoxShadow(
+                      color: Colors.blueAccent.withOpacity(0.3), blurRadius: 10)
+                ]
               : [],
         ),
         child: Row(
@@ -115,11 +123,17 @@ class _EmployeeCardState extends State<EmployeeCard> {
               children: [
                 Text(
                   widget.name,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent),
                 ),
                 Text(
                   widget.email,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent),
                 ),
               ],
             ),
@@ -131,9 +145,10 @@ class _EmployeeCardState extends State<EmployeeCard> {
               ),
               child: Text(
                 widget.role,
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
-            )
+            ),
           ],
         ),
       ),

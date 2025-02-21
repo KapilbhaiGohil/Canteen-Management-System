@@ -1,6 +1,9 @@
 import 'package:ddu_admin/components/empcard.dart';
 import 'package:ddu_admin/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/employee.dart';
+import '../providers/canteenProvider.dart';
 
 class EmployeesScreen extends StatefulWidget {
   const EmployeesScreen({super.key});
@@ -14,24 +17,34 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  String _selectedRole = 'Provider';
-  bool _isEditing = false; // Track whether it's an edit operation
-  String? _editingEmployeeId; // Store the ID of the employee being edited
+  String _selectedRole = 'foodProvider';
+  bool _isEditing = false;
+  String? _editingEmployeeId;
 
-  void _showAddEmployeeModal(BuildContext context, {String? name, String? email, String? role, String? employeeId}) {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final provider = Provider.of<CanteenProvider>(context, listen: false);
+      provider.loadEmployees();
+    });
+  }
+
+  void _showAddEmployeeModal(BuildContext context,
+      {String? name, String? email, String? role, String? employeeId}) {
     setState(() {
-      _isEditing = employeeId != null; // If employeeId exists, it's an edit operation
+      _isEditing = employeeId != null;
       _editingEmployeeId = employeeId;
       _nameController.text = name ?? "";
       _emailController.text = email ?? "";
-      _passwordController.text = ""; // Password shouldn't be prefilled
-      _selectedRole = role ?? "Provider";
+      _passwordController.text = "";
+      _selectedRole = role ?? "foodProvider";
     });
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -47,19 +60,18 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
             children: [
               Text(
                 _isEditing ? "Edit Employee" : "Add Employee",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent),
               ),
               const SizedBox(height: 10),
-
-              // Employee Name Field
               CustomTextFormField(
                 controller: _nameController,
                 hintText: "Enter employee name",
                 labelText: "Employee Name",
               ),
               const SizedBox(height: 10),
-
-              // Email Field
               CustomTextFormField(
                 controller: _emailController,
                 hintText: "Enter email",
@@ -67,8 +79,6 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 10),
-
-              // Password Field (Only required for adding new employee)
               if (!_isEditing)
                 Column(
                   children: [
@@ -81,12 +91,10 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
                     const SizedBox(height: 10),
                   ],
                 ),
-
-              // Role Dropdown
               CustomDropdown(
                 value: _selectedRole,
                 hintText: "Select Role",
-                items: ["Provider", "Manager", "Chef"],
+                items: ["foodProvider", "Chef"],
                 onChanged: (value) {
                   setState(() {
                     _selectedRole = value!;
@@ -94,19 +102,27 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
                 },
               ),
               const SizedBox(height: 20),
-
-              // Submit Button
               CustomButton(
                 text: _isEditing ? "Update Employee" : "Add Employee",
-                onPressed: () {
+                onPressed: () async {
+                  var provider =
+                      Provider.of<CanteenProvider>(context, listen: false);
                   if (_isEditing) {
-                    print("Updated Employee: ${_nameController.text}, Role: $_selectedRole, ID: $_editingEmployeeId");
-                    // Call API to update employee
+                    await provider.updateUser(
+                      _editingEmployeeId!,
+                      _nameController.text,
+                      _emailController.text,
+                      _selectedRole,
+                    );
                   } else {
-                    print("Added Employee: ${_nameController.text}, Role: $_selectedRole");
-                    // Call API to add employee
+                    await provider.registerUser(
+                      _nameController.text,
+                      _emailController.text,
+                      _passwordController.text,
+                      _selectedRole,
+                    );
                   }
-                  Navigator.pop(context); // Close modal
+                  Navigator.pop(context);
                 },
               ),
             ],
@@ -118,29 +134,44 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var provider = Provider.of<CanteenProvider>(context);
     return Stack(
       children: [
         Container(
           height: double.infinity,
           width: double.infinity,
           margin: const EdgeInsets.all(15),
-          child: Column(
-            children: [
-              EmployeeCard(
-                name: "John Doe",
-                email: "john@example.com",
-                role: "Manager",
-                onEdit: () => _showAddEmployeeModal(context, name: "John Doe", email: "john@example.com", role: "Manager", employeeId: "123"),
-              ),
-              const SizedBox(height: 8),
-              EmployeeCard(
-                name: "Jane Smith",
-                email: "jane@example.com",
-                role: "Chef",
-                onEdit: () => _showAddEmployeeModal(context, name: "Jane Smith", email: "jane@example.com", role: "Chef", employeeId: "456"),
-              ),
-            ],
-          ),
+          child: provider.isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.blueAccent,
+                  ),
+                )
+              : provider.hasError
+                  ? const Center(child: Text("Failed to load employees"))
+                  : provider.employees.isEmpty
+                      ? const Center(child: Text("No employees found"))
+                      : ListView.separated(
+                          itemCount: provider.employees.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 10), // Space between cards
+                          itemBuilder: (context, index) {
+                            final emp = provider.employees[index];
+                            return EmployeeCard(
+                              employeeId: emp.id,
+                              name: emp.name,
+                              email: emp.email,
+                              role: emp.role,
+                              onEdit: () => _showAddEmployeeModal(
+                                context,
+                                name: emp.name,
+                                email: emp.email,
+                                role: emp.role,
+                                employeeId: emp.id,
+                              ),
+                            );
+                          },
+                        ),
         ),
         Positioned(
           bottom: 20,

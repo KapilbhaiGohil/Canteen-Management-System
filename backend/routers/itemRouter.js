@@ -2,6 +2,7 @@ import express from 'express';
 import { Item, Category } from '../models/models.js';
 import { authenticate, authorize } from '../middlewares/middlewares.js';
 import { upload } from '../utils/upload.js';
+import mongoose from 'mongoose';
 
 const itemRouter = express.Router();
 
@@ -46,6 +47,35 @@ itemRouter.post('/createItem', authenticate, authorize(['admin', 'manager']), up
         res.status(500).json({ error: 'Internal server error.' });
     }
 });
+itemRouter.post('/updateCategory', authenticate, authorize(['admin', 'manager']), async (req, res) => {
+    console.log('Request to updateCategory:', req.body);
+    try {
+        const { categoryId, name, desc } = req.body;
+
+        if (!categoryId || (!name && !desc)) {
+            console.log('Missing required fields for updateCategory');
+            return res.status(400).json({ error: 'Category ID and at least one field (name or desc) are required' });
+        }
+
+        console.log('Updating category with ID:', categoryId);
+        const updatedCategory = await Category.findByIdAndUpdate(
+            categoryId, 
+            { ...(name && { name }), ...(desc && { desc }) }, 
+            { new: true }
+        );
+
+        if (!updatedCategory) {
+            console.log('Category not found:', categoryId);
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        console.log('Category updated:', updatedCategory);
+        res.status(200).json({ message: 'Category updated successfully', category: updatedCategory });
+    } catch (err) {
+        console.error('Error in updateCategory:', err);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
 
 itemRouter.post('/removeItem', authenticate, authorize(['admin', 'manager']), async (req, res) => {
     console.log('Request to removeItem:', req.body);
@@ -83,18 +113,42 @@ itemRouter.post('/removeCategory', authenticate, authorize(['admin', 'manager'])
 
 itemRouter.post('/updateItem', authenticate, authorize(['admin', 'manager']), upload.single('image'), async (req, res) => {
     console.log('Request to updateItem:', req.body);
+
     try {
         const { itemId, name, categoryId, price, isAvailable } = req.body;
         const imageUrl = req.file ? req.file.path : undefined;
-        console.log('Updating item with ID:', itemId);
-        const updatedItem = await Item.findByIdAndUpdate(itemId, { name, categoryId, price, isAvailable, ...(imageUrl && { imageUrl }) }, { new: true });
+
+        const item = await Item.findById(itemId);
+        if (!item) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        const oldCategoryId = item.categoryId.toString();
+
+        const updatedItem = await Item.findByIdAndUpdate(
+            itemId,
+            { name, categoryId, price, isAvailable, ...(imageUrl && { imageUrl }) },
+            { new: true }
+        );
+
+        if (!updatedItem) {
+            return res.status(500).json({ error: 'Failed to update item' });
+        }
+
+        if (oldCategoryId !== categoryId) {
+            await Category.findByIdAndUpdate(oldCategoryId, { $pull: { items: itemId } });
+            await Category.findByIdAndUpdate(categoryId, { $push: { items: itemId } });
+        }
+
         console.log('Item updated:', updatedItem);
         res.status(200).json({ message: 'Item updated successfully', item: updatedItem });
+
     } catch (err) {
         console.error('Error in updateItem:', err);
-        res.status(500).json({ error: 'Internal server error.' });
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
+
 
 itemRouter.get('/retriveItemsByCategory', authenticate, async (req, res) => {
     console.log('Request to retrieve items by category');

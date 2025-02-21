@@ -1,3 +1,5 @@
+import 'package:ddu_admin/providers/authProvider.dart';
+import 'package:ddu_admin/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../components/category.dart';
@@ -20,7 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
-  void updateScreen(String screenName, Widget screenWidget, [bool shouldPop = true]) {
+  void updateScreen(String screenName, Widget screenWidget,
+      [bool shouldPop = true]) {
     setState(() {
       _activeScreen = screenName;
       _selectedScreen = screenWidget;
@@ -29,14 +32,15 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.pop(context);
     }
   }
- @override
+
+  @override
   void initState() {
     super.initState();
     _selectedScreen = HomeContent(updateScreen: updateScreen);
 
     Future.microtask(() async {
       final canteenProvider =
-      Provider.of<CanteenProvider>(context, listen: false);
+          Provider.of<CanteenProvider>(context, listen: false);
       await canteenProvider.loadCategories();
     });
   }
@@ -63,9 +67,14 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text("No"),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, "/login");
+                await Provider.of<AuthProvider>(context, listen: false)
+                    .logout();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
               },
               child: const Text("Yes", style: TextStyle(color: Colors.red)),
             ),
@@ -82,23 +91,23 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: _isSearching
             ? TextField(
-          controller: _searchController,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: "Search items...",
-            border: InputBorder.none,
-            hintStyle: TextStyle(color: Colors.white70),
-          ),
-          style: TextStyle(color: Colors.white),
-          cursorColor: Colors.white,
-          onChanged: (value) {
-            print("Searching for: $value");
-          },
-        )
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: "Search items...",
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.white70),
+                ),
+                style: TextStyle(color: Colors.white),
+                cursorColor: Colors.white,
+                onChanged: (value) {
+                  print("Searching for: $value");
+                },
+              )
             : Text(
-          _activeScreen,
-          style: const TextStyle(color: Colors.white),
-        ),
+                _activeScreen,
+                style: const TextStyle(color: Colors.white),
+              ),
         backgroundColor: Colors.blueAccent,
         leading: IconButton(
           icon: const Icon(Icons.menu, color: Colors.white),
@@ -108,11 +117,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: _activeScreen == "Home"
             ? [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white),
-            onPressed: _toggleSearch,
-          ),
-        ]
+                IconButton(
+                  icon: Icon(_isSearching ? Icons.close : Icons.search,
+                      color: Colors.white),
+                  onPressed: _toggleSearch,
+                ),
+              ]
             : null,
       ),
       drawer: Drawer(
@@ -126,15 +136,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
-            _buildDrawerItem(Icons.home, "Home", HomeContent(updateScreen: updateScreen,)),
-            _buildDrawerItem(Icons.category, "Add Category", const AddCategoryScreen()),
-            _buildDrawerItem(Icons.fastfood, "Add Item", const AddItemScreen()),
-            _buildDrawerItem(Icons.people, "Employees", const EmployeesScreen()),
+            _buildDrawerItem(
+                Icons.home,
+                "Home",
+                HomeContent(
+                  updateScreen: updateScreen,
+                )),
+            _buildDrawerItem(
+                Icons.category,
+                "Add Category",
+                AddCategoryScreen(
+                  updateScreen: updateScreen,
+                )),
+            _buildDrawerItem(
+                Icons.fastfood,
+                "Add Item",
+                AddItemScreen(
+                  updateScreen: updateScreen,
+                )),
+            _buildDrawerItem(Icons.people, "Employees", EmployeesScreen()),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(
                 "Log out",
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
               onTap: _showLogoutDialog,
             ),
@@ -162,16 +188,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-class HomeContent extends StatelessWidget {
 
+class HomeContent extends StatelessWidget {
   const HomeContent({super.key, required this.updateScreen});
-  final Function (String,Widget,[bool])updateScreen;
+  final Function(String, Widget, [bool]) updateScreen;
   @override
   Widget build(BuildContext context) {
     return Consumer<CanteenProvider>(
       builder: (context, canteenProvider, child) {
         if (canteenProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+              child: CircularProgressIndicator(
+            color: Colors.blueAccent,
+          ));
         }
 
         if (canteenProvider.categories.isEmpty) {
@@ -179,20 +208,66 @@ class HomeContent extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("No categories available.", style: TextStyle(fontSize: 18)),
+                const Text("No categories available.",
+                    style: TextStyle(fontSize: 18)),
                 const SizedBox(height: 10),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white
-                  ),
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white),
                   onPressed: () {
-                    updateScreen("Add Category",AddCategoryScreen(),false);
+                    updateScreen(
+                        "Add Category",
+                        AddCategoryScreen(
+                          updateScreen: updateScreen,
+                        ),
+                        false);
                   },
                   child: const Text("Create New Category"),
                 ),
               ],
             ),
+          );
+        }
+        void _deleteCategory(String categoryId) {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text("Delete Category"),
+                content: const Text(
+                    "Are you sure you want to delete this category?"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Cancel"),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      // Perform the delete action here using the provider
+                      final canteenProvider =
+                          Provider.of<CanteenProvider>(context, listen: false);
+                      bool success =
+                          await canteenProvider.removeCategory(categoryId);
+                      Navigator.pop(context);
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Category deleted successfully!")),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Failed to delete category.")),
+                        );
+                      }
+                    },
+                    child: const Text("Delete",
+                        style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              );
+            },
           );
         }
 
@@ -202,7 +277,14 @@ class HomeContent extends StatelessWidget {
             children: canteenProvider.categories.map((category) {
               return Column(
                 children: [
-                  Category(categoryName: category['name']),
+                  Category(
+                    categoryId: category['_id'],
+                    desc: category['desc'],
+                    updateScreen: updateScreen,
+                    categoryName: category['name'],
+                    items: category['items'] ?? [],
+                    onDeleteCategory: () => _deleteCategory(category['_id']),
+                  ),
                   const SizedBox(height: 8),
                 ],
               );

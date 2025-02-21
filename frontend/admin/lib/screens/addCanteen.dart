@@ -57,7 +57,7 @@ class _AddcanteenState extends State<Addcanteen> {
               onTap: () async {
                 Navigator.pop(context);
                 final pickedFile =
-                await _picker.pickImage(source: ImageSource.camera);
+                    await _picker.pickImage(source: ImageSource.camera);
                 if (pickedFile != null) {
                   setState(() {
                     _image = File(pickedFile.path);
@@ -72,7 +72,7 @@ class _AddcanteenState extends State<Addcanteen> {
               onTap: () async {
                 Navigator.pop(context);
                 final pickedFile =
-                await _picker.pickImage(source: ImageSource.gallery);
+                    await _picker.pickImage(source: ImageSource.gallery);
                 if (pickedFile != null) {
                   setState(() {
                     _image = File(pickedFile.path);
@@ -90,12 +90,12 @@ class _AddcanteenState extends State<Addcanteen> {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final canteenProvider =
-      Provider.of<CanteenProvider>(context, listen: false);
+          Provider.of<CanteenProvider>(context, listen: false);
 
       if (isUpdating) {
         bool isUpdated = await canteenProvider.updateCanteen(
           canteenId: widget.canteen!['_id'],
-          imageFile: _image, // Send image only if changed
+          imageFile: _image,
           name: _canteenNameController.text,
           collegeName: _collegeNameController.text,
           district: _districtController.text,
@@ -106,7 +106,8 @@ class _AddcanteenState extends State<Addcanteen> {
         if (isUpdated) {
           widget.updateScreen(
               "Home", HomeContent(updateScreen: widget.updateScreen), false);
-          ShowSnackbar.showMessage(context, "Canteen updated successfully", isOk: true);
+          ShowSnackbar.showMessage(context, "Canteen updated successfully",
+              isOk: true);
         }
       } else {
         if (_image == null) {
@@ -129,7 +130,8 @@ class _AddcanteenState extends State<Addcanteen> {
         if (isAdded) {
           widget.updateScreen(
               "Home", HomeContent(updateScreen: widget.updateScreen), false);
-          ShowSnackbar.showMessage(context, "Canteen added successfully", isOk: true);
+          ShowSnackbar.showMessage(context, "Canteen added successfully",
+              isOk: true);
         }
       }
     }
@@ -158,11 +160,11 @@ class _AddcanteenState extends State<Addcanteen> {
                           backgroundImage: _image != null
                               ? FileImage(_image!) as ImageProvider
                               : _existingImageUrl != null
-                              ? NetworkImage(_existingImageUrl!)
-                              : null,
+                                  ? NetworkImage(_existingImageUrl!)
+                                  : null,
                           child: (_image == null && _existingImageUrl == null)
                               ? const Icon(Icons.image,
-                              size: 50, color: Colors.grey)
+                                  size: 50, color: Colors.grey)
                               : null,
                         ),
                         Positioned(
@@ -214,8 +216,7 @@ class _AddcanteenState extends State<Addcanteen> {
                           labelText: "District",
                           controller: _districtController,
                           suffixIcon: Icons.business,
-                          validator: (value) =>
-                          value == null || value.isEmpty
+                          validator: (value) => value == null || value.isEmpty
                               ? "District is required"
                               : null,
                         ),
@@ -227,8 +228,7 @@ class _AddcanteenState extends State<Addcanteen> {
                           hintText: 'Enter state name',
                           controller: _stateController,
                           suffixIcon: Icons.location_city,
-                          validator: (value) =>
-                          value == null || value.isEmpty
+                          validator: (value) => value == null || value.isEmpty
                               ? "State is required"
                               : null,
                         ),
@@ -243,9 +243,9 @@ class _AddcanteenState extends State<Addcanteen> {
                     controller: _pincodeController,
                     suffixIcon: Icons.pin,
                     validator: (value) =>
-                    value == null || value.isEmpty || value.length != 6
-                        ? "Enter a valid 6-digit pincode"
-                        : null,
+                        value == null || value.isEmpty || value.length != 6
+                            ? "Enter a valid 6-digit pincode"
+                            : null,
                   ),
                 ],
               ),

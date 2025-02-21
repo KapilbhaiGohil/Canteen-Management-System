@@ -33,3 +33,13 @@ export const authorize = (roles) => (req, res, next) => {
     }
     next();
 };
+export const managerCanModify = (req, res, next) => {
+    const allowedRoles = ['foodProvider','Chef'];
+    if (req.user.role === 'manager') {
+        const { role } = req.body;
+        if (!allowedRoles.includes(role)) {
+            return res.status(403).json({ error: 'Managers can only modify specific roles.' });
+        }
+    }
+    next();
+};

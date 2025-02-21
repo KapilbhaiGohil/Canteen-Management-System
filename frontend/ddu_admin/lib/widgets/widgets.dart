@@ -209,47 +209,95 @@ class ShowSnackbar {
 }
 
 class CustomItemTile extends StatelessWidget {
-  const CustomItemTile({super.key});
+  final String itemName;
+  final String itemImage;
+  final String price;
+  final Function(String, Widget, [bool]) updateScreen;
+  final VoidCallback onUpdate;
+  final VoidCallback onDelete;
+
+  const CustomItemTile({
+    super.key,
+    required this.itemName,
+    required this.itemImage,
+    required this.price,
+    required this.onUpdate,
+    required this.onDelete,
+    required this.updateScreen,
+  });
+
+  void _showOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.blueAccent),
+              title: const Text("Update Item"),
+              onTap: () {
+                Navigator.pop(context);
+                onUpdate();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text("Delete Item"),
+              onTap: () {
+                Navigator.pop(context);
+                onDelete();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 180,
-      padding: const EdgeInsets.all(10),
-      // decoration: BoxDecoration(
-      //     borderRadius: BorderRadius.circular(5),
-      //     border: Border.all(
-      //       color: Colors.black,
-      //     )),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Image.network(
-            "https://www.shutterstock.com/image-photo/fried-salmon-steak-cooked-green-600nw-2489026949.jpg",
-            width: 110,
-            height: 110,
-            fit: BoxFit.cover,
-          ),
-          Container(
-            child: Column(
-              // mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  "item name",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                Text(
-                  "50\$",
-                  style: TextStyle(
-                      color: Colors.blueAccent,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w400),
-                ),
-              ],
+    return GestureDetector(
+      onLongPress: () => _showOptions(context),
+      child: Container(
+        width: 120,
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                itemImage,
+                width: 110,
+                height: 110,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    "assets/images/placeholder.png", // Fallback image
+                    width: 110,
+                    height: 110,
+                    fit: BoxFit.contain,
+                  );
+                },
+              ),
             ),
-          )
-        ],
+            Text(
+              itemName,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              "\$$price",
+              style: const TextStyle(
+                color: Colors.blueAccent,
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

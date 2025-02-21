@@ -10,12 +10,12 @@ class AuthProvider with ChangeNotifier {
   String? _accessToken;
   bool _isAuthenticated = false;
   bool _isLoading = true;
-  Map<String, dynamic>? _canteen; // Store canteen details
+  Map<String, dynamic>? _canteen;
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get accessToken => _accessToken;
-  Map<String, dynamic>? get canteen => _canteen; // Getter for canteen
+  Map<String, dynamic>? get canteen => _canteen;
 
   Future<void> _saveTokens(String accessToken, String refreshToken) async {
     try {
@@ -72,20 +72,20 @@ class AuthProvider with ChangeNotifier {
           },
         );
 
-        if (response.statusCode == 200) {
-          final responseData = jsonDecode(response.body);
-          print("Access token is valid.");
-          _isAuthenticated = true;
+        final responseData = jsonDecode(response.body);
 
-          if (responseData.containsKey('canteen')) {
-            _canteen = responseData['canteen'];
-            await _saveCanteen(_canteen);
-          } else {
-            print("No canteen associated with this user.");
-            _canteen = null;
+        if (response.statusCode == 200) {
+          if (!responseData.containsKey('canteen') ||
+              responseData['canteen'] == null) {
+            print("No canteen associated with this user. Logging out...");
+            await logout();
+            return;
           }
 
-          await _loadCanteen();
+          print("Access token is valid.");
+          _isAuthenticated = true;
+          _canteen = responseData['canteen'];
+          await _saveCanteen(_canteen);
         } else if (response.statusCode == 403 || response.statusCode == 401) {
           print("Access token expired or invalid. Attempting refresh...");
           await refreshToken();
@@ -102,52 +102,52 @@ class AuthProvider with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
-Future<void> refreshToken() async {
-  print("Attempting to refresh token...");
-  final refreshToken = await _secureStorage.read(key: 'refreshToken');
 
-  if (refreshToken == null) {
-    print("No refresh token found. Logging out...");
-    await logout();
-    return;
-  }
+  Future<void> refreshToken() async {
+    print("Attempting to refresh token...");
+    final refreshToken = await _secureStorage.read(key: 'refreshToken');
 
-  final url = Uri.parse('$baseUrl/auth/refreshTokens');
-  try {
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'refreshToken': refreshToken}),
-    );
+    if (refreshToken == null) {
+      print("No refresh token found. Logging out...");
+      await logout();
+      return;
+    }
 
-    if (response.statusCode == 200) {
+    final url = Uri.parse('$baseUrl/auth/refreshTokens');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      );
+
       final responseData = jsonDecode(response.body);
-      _accessToken = responseData['accessToken'];
-      await _saveTokens(_accessToken!, responseData['refreshToken']);
-      _isAuthenticated = true;
-      print("Token refresh successful.");
 
-      // Check if canteen data is available and save it
-      if (responseData.containsKey('canteen')) {
+      if (response.statusCode == 200) {
+        if (!responseData.containsKey('canteen') ||
+            responseData['canteen'] == null) {
+          print("No canteen associated with this user. Logging out...");
+          await logout();
+          return;
+        }
+
+        _accessToken = responseData['accessToken'];
+        await _saveTokens(_accessToken!, responseData['refreshToken']);
         _canteen = responseData['canteen'];
         await _saveCanteen(_canteen);
-        print("Canteen details updated after token refresh.");
-      } else {
-        print("No canteen associated with this user.");
-        _canteen = null;
-      }
+        _isAuthenticated = true;
 
-      notifyListeners();
-    } else {
-      print("Failed to refresh token. Logging out...");
+        print("Token refresh successful.");
+        notifyListeners();
+      } else {
+        print("Failed to refresh token. Logging out...");
+        await logout();
+      }
+    } catch (error) {
+      print("Refresh token error: $error");
       await logout();
     }
-  } catch (error) {
-    print("Refresh token error: $error");
-    await logout();
   }
-}
-
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     print("Attempting login for email: $email");
@@ -161,19 +161,22 @@ Future<void> refreshToken() async {
       );
 
       final responseData = jsonDecode(response.body);
+
       if (response.statusCode == 200) {
+        if (!responseData.containsKey('canteen') ||
+            responseData['canteen'] == null) {
+          print("No canteen associated with this user. Logging out...");
+          await logout();
+          return {"isOk": false, "error": "No canteen found for this user."};
+        }
+
         _accessToken = responseData['accessToken'];
         String refreshToken = responseData['refreshToken'];
         _isAuthenticated = true;
-        await _saveTokens(_accessToken!, refreshToken);
 
-        if (responseData.containsKey('canteen')) {
-          _canteen = responseData['canteen'];
-          await _saveCanteen(_canteen);
-        } else {
-          print("No canteen associated with this user.");
-          _canteen = null;
-        }
+        await _saveTokens(_accessToken!, refreshToken);
+        _canteen = responseData['canteen'];
+        await _saveCanteen(_canteen);
 
         notifyListeners();
         print("Login successful.");
@@ -195,7 +198,6 @@ Future<void> refreshToken() async {
     print("Logging out...");
     final refreshToken = await _secureStorage.read(key: 'refreshToken');
 
-    // Clear tokens and canteen from local storage before calling logout API
     await _secureStorage.delete(key: 'accessToken');
     await _secureStorage.delete(key: 'refreshToken');
     await _secureStorage.delete(key: 'canteen');
@@ -203,6 +205,7 @@ Future<void> refreshToken() async {
     _accessToken = null;
     _canteen = null;
     _isAuthenticated = false;
+    _isLoading = false;
     notifyListeners();
 
     if (refreshToken != null) {

@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User, Canteen } from '../models/models.js';
-import { authenticate, authorize } from '../middlewares/middlewares.js';
+import { authenticate, authorize,managerCanModify } from '../middlewares/middlewares.js';
 
 const authRouter = express.Router();
 
@@ -238,7 +238,34 @@ authRouter.get('/managers',authenticate,authorize(['admin']), async (req, res) =
     }
 });
 
-authRouter.post('/registerUser',authenticate,authorize(['admin']),async (req, res) => {
+authRouter.get('/employees', authenticate, authorize(['admin', 'manager']), async (req, res) => {
+    try {
+        console.log("Fetching employees with their roles...");
+        
+        const { canteenId } = req.query;
+        if (!canteenId) {
+            console.log("Canteen ID is required");
+            return res.status(400).json({ error: 'Canteen ID is required!' });
+        }
+
+        const employees = await User.find({ role: { $in: ['foodProvider', 'Chef'] }, canteenId });
+
+        const employeeList = employees.map(emp => ({
+            _id: emp._id,
+            name: emp.name,
+            email: emp.email,
+            role: emp.role
+        }));
+
+        console.log("Employees fetched successfully:", employeeList);
+        return res.status(200).json(employeeList);
+    } catch (err) {
+        console.error("Error fetching employees:", err);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+authRouter.post('/registerUser',authenticate,authorize(['admin','manager']),managerCanModify,async (req, res) => {
     try {
         console.log("Register request received:", req.body);
         
@@ -274,7 +301,7 @@ authRouter.post('/registerUser',authenticate,authorize(['admin']),async (req, re
     }
 });
 
-authRouter.put('/updateUser', authenticate, authorize(['admin']), async (req, res) => {
+authRouter.put('/updateUser', authenticate, authorize(['admin','manager']),managerCanModify, async (req, res) => {
     try {
         console.log("Update manager request received:", req.body);
 
@@ -313,7 +340,7 @@ authRouter.put('/updateUser', authenticate, authorize(['admin']), async (req, re
     }
 });
 
-authRouter.delete('/deleteUser', authenticate, authorize(['admin']), async (req, res) => {
+authRouter.delete('/deleteUser', authenticate, authorize(['admin','manager']), async (req, res) => {
     try {
         console.log("Delete manager request received:", req.body);
 
@@ -328,11 +355,13 @@ authRouter.delete('/deleteUser', authenticate, authorize(['admin']), async (req,
             console.log("Manager not found");
             return res.status(404).json({ error: 'Manager not found.' });
         }
-
-        await User.findByIdAndDelete(managerId);
-
-        console.log("Manager deleted successfully:", managerId);
-        return res.status(200).json({ message: "Manager deleted successfully!" });
+        if(manager.role == 'foodProvider' || manager.role == 'Chef'){
+            await User.findByIdAndDelete(managerId);
+            console.log("Manager deleted successfully:", managerId);
+            return res.status(200).json({ message: "Manager deleted successfully!" });
+        }else{
+            return res.status(403).json({ message: "Manager deleted successfully!" });
+        }
     } catch (err) {
         console.error("Delete error:", err);
         return res.status(500).json({ error: 'Internal server error.' });
