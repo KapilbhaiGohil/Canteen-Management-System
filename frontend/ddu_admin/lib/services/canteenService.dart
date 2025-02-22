@@ -13,9 +13,23 @@ class CanteenService {
   Future<List<dynamic>> fetchCategories() async {
     try {
       final accessToken = await _secureStorage.read(key: 'accessToken');
+      final canteenData = await _secureStorage.read(key: "canteen");
+
+      if (canteenData == null) {
+        print("No canteen data found. Logging out user.");
+        return [];
+      }
+
+      final canteen = jsonDecode(canteenData);
+      final String? canteenId = canteen['_id'];
+
+      if (canteenId == null) {
+        print("Canteen ID is missing. Logging out user.");
+        return [];
+      }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/item/retriveItemsByCategory'),
+        Uri.parse('$baseUrl/item/retriveItemsByCategory?canteenId=$canteenId'),
         headers: {
           'Authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',

@@ -3,7 +3,17 @@ import '../widgets/widgets.dart';
 
 class Category extends StatefulWidget {
   final String categoryName;
-  const Category({super.key, required this.categoryName});
+  final List<dynamic> items;
+  final Function(String, Widget, [bool]) updateScreen;
+  final String desc;
+  final String categoryId;
+  const Category(
+      {super.key,
+      required this.categoryName,
+      required this.items,
+      required this.updateScreen,
+      required this.desc,
+      required this.categoryId});
 
   @override
   State<Category> createState() => _CategoryState();
@@ -20,13 +30,6 @@ class _CategoryState extends State<Category> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> items = [
-      {"name": "Burger", "price": 5.99},
-      {"name": "Pizza", "price": 8.99},
-      {"name": "Pasta", "price": 7.49},
-      {"name": "Sandwich", "price": 4.99},
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -41,27 +44,51 @@ class _CategoryState extends State<Category> {
           child: Text(
             widget.categoryName,
             style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueAccent),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent,
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        SizedBox(
-          height: 180,
-          child: ListView.separated(
-            controller: _scrollController,
-            itemCount: items.length,
-            scrollDirection: Axis.horizontal,
-            itemBuilder: (context, index) {
-              return CustomItemTile(
-                itemName: items[index]["name"],
-                itemPrice: items[index]["price"],
-              );
-            },
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
+        if (widget.items.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(10),
+              child: Text(
+                "No items added for this category.",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 180,
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              trackVisibility: false,
+              child: ListView.separated(
+                controller: _scrollController,
+                itemCount: widget.items.length,
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  final item = widget.items[index];
+                  return CustomItemTile(
+                    itemName: item['name'],
+                    itemImage: item['imageUrl'],
+                    price: item['price'],
+                    itemId: item['_id'],
+                  );
+                },
+                separatorBuilder: (context, index) => const SizedBox(width: 10),
+              ),
+            ),
           ),
-        ),
       ],
     );
   }

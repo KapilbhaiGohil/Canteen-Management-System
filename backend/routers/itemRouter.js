@@ -150,10 +150,11 @@ itemRouter.post('/updateItem', authenticate, authorize(['admin', 'manager']), up
 });
 
 
-itemRouter.get('/retriveItemsByCategory', authenticate, async (req, res) => {
+itemRouter.get('/retriveItemsByCategory', async (req, res) => {
     console.log('Request to retrieve items by category');
     try {
-        const categories = await Category.find().populate('items');
+        const {canteenId} = req.query;
+        const categories = await Category.find({canteenId:canteenId}).populate('items');
         console.log('Categories with items retrieved:', categories.length);
         res.status(200).json(categories);
     } catch (err) {

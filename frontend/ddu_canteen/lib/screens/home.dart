@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../components/category.dart';
+import '../providers/canteenProvider.dart';
 import 'cart.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -12,7 +17,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _activeScreen = "Home";
-  Widget _selectedScreen = const HomeContent();
+  late Widget _selectedScreen;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
@@ -24,6 +29,29 @@ class _HomeScreenState extends State<HomeScreen> {
       _searchController.clear();
     });
     Navigator.pop(context);
+  }
+
+  void updateScreen(String screenName, Widget screenWidget,
+      [bool shouldPop = true]) {
+    setState(() {
+      _activeScreen = screenName;
+      _selectedScreen = screenWidget;
+    });
+    if (shouldPop) {
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedScreen = HomeContent(updateScreen: updateScreen);
+
+    Future.microtask(() async {
+      final canteenProvider =
+          Provider.of<CanteenProvider>(context, listen: false);
+      await canteenProvider.loadCategories();
+    });
   }
 
   void _toggleSearch() {
@@ -47,8 +75,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, "/login");
+                if (Platform.isAndroid) {
+                  SystemNavigator.pop();
+                } else {
+                  exit(0);
+                }
               },
               child: const Text("Yes", style: TextStyle(color: Colors.red)),
             ),
@@ -110,7 +141,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 setState(() {
                   _activeScreen = "Home";
-                  _selectedScreen = HomeContent();
+                  _selectedScreen = HomeContent(
+                    updateScreen: updateScreen,
+                  );
                   _isSearching = false;
                   _searchController.clear();
                 });
@@ -130,7 +163,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
-            _buildDrawerItem(Icons.home, "Home", const HomeContent()),
+            _buildDrawerItem(
+                Icons.home,
+                "Home",
+                HomeContent(
+                  updateScreen: updateScreen,
+                )),
             _buildDrawerItem(Icons.shopping_bag, "Cart", const CartScreen()),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
@@ -165,23 +203,50 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
-
+  const HomeContent({super.key, required this.updateScreen});
+  final Function(String, Widget, [bool]) updateScreen;
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        children: [
-          Category(categoryName: "Category 1"),
-          const SizedBox(height: 8),
-          Category(categoryName: "Category 2"),
-          const SizedBox(height: 8),
-          Category(categoryName: "Category 3"),
-          const SizedBox(height: 8),
-          Category(categoryName: "Category 4"),
-        ],
-      ),
+    return Consumer<CanteenProvider>(
+      builder: (context, canteenProvider, child) {
+        if (canteenProvider.isLoading) {
+          return const Center(
+              child: CircularProgressIndicator(
+            color: Colors.blueAccent,
+          ));
+        }
+
+        if (canteenProvider.categories.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("No categories available.",
+                    style: TextStyle(fontSize: 18)),
+              ],
+            ),
+          );
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            children: canteenProvider.categories.map((category) {
+              return Column(
+                children: [
+                  Category(
+                    categoryId: category['_id'],
+                    desc: category['desc'],
+                    updateScreen: updateScreen,
+                    categoryName: category['name'],
+                    items: category['items'] ?? [],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 }

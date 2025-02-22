@@ -3,6 +3,9 @@ import 'package:ddu_canteen/screens/home.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'providers/canteenProvider.dart';
+import 'providers/cartProvider.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
@@ -18,6 +21,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => AuthProvider()..tryAutoLogin(),
         ),
+        ChangeNotifierProvider(create: (context) => CanteenProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {

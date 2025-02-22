@@ -15,7 +15,7 @@ const storage = new CloudinaryStorage({
         const folder = req.body.folder || 'canteens';
         return {
             folder: folder,
-            allowed_formats: ['jpg', 'jpeg', 'png'],
+            allowed_formats: ['jpg', 'jpeg', 'png','webp'],
         };
     },
 });

@@ -1,19 +1,25 @@
+import 'package:ddu_canteen/constant.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/cartProvider.dart';
 
 class CustomItemTile extends StatelessWidget {
   final String itemName;
-  final double itemPrice;
+  final String itemImage;
+  final int price;
+  final String itemId;
+  const CustomItemTile(
+      {super.key,
+      required this.itemName,
+      required this.itemImage,
+      required this.price,
+      required this.itemId});
 
-  const CustomItemTile({
-    super.key,
-    required this.itemName,
-    required this.itemPrice,
-  });
-
-  void showItemModal(BuildContext context, String itemName, double itemPrice,
-      String imageUrl) {
+  void showItemModal(
+      BuildContext context, String itemName, int itemPrice, String imageUrl) {
     int quantity = 1;
-    double totalPrice = itemPrice;
+    int totalPrice = itemPrice;
 
     showModalBottomSheet(
       context: context,
@@ -28,31 +34,19 @@ class CustomItemTile extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Item Image
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      imageUrl,
-                      width: 150,
-                      height: 150,
-                      fit: BoxFit.cover,
-                    ),
+                    child: Image.network(imageUrl,
+                        width: 150, height: 150, fit: BoxFit.cover),
                   ),
                   const SizedBox(height: 10),
-
-                  // Item Name
-                  Text(
-                    itemName,
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  Text(itemName,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-
-                  // Quantity and Price Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Quantity Controls
                       Row(
                         children: [
                           IconButton(
@@ -67,11 +61,9 @@ class CustomItemTile extends StatelessWidget {
                               }
                             },
                           ),
-                          Text(
-                            quantity.toString(),
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
+                          Text(quantity.toString(),
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
                           IconButton(
                             icon: const Icon(Icons.add_circle,
                                 color: Colors.green, size: 30),
@@ -84,26 +76,23 @@ class CustomItemTile extends StatelessWidget {
                           ),
                         ],
                       ),
-
-                      // Updated Price
-                      Text(
-                        "${totalPrice.toStringAsFixed(2)} ₹",
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueAccent),
-                      ),
+                      Text("${totalPrice.toStringAsFixed(2)} ₹",
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueAccent)),
                     ],
                   ),
                   const SizedBox(height: 15),
-
-                  // Add to Cart Button
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueAccent,
                       minimumSize: const Size(double.infinity, 50),
                     ),
                     onPressed: () {
+                      Provider.of<CartProvider>(context, listen: false).addItem(
+                          itemName, itemPrice, quantity, imageUrl, itemId);
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -130,8 +119,7 @@ class CustomItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => showItemModal(context, itemName, itemPrice,
-          "https://www.shutterstock.com/image-photo/fried-salmon-steak-cooked-green-600nw-2489026949.jpg"),
+      onTap: () => showItemModal(context, itemName, price, itemImage),
       child: Container(
         height: 180,
         padding: const EdgeInsets.all(10),
@@ -139,12 +127,18 @@ class CustomItemTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                "https://www.shutterstock.com/image-photo/fried-salmon-steak-cooked-green-600nw-2489026949.jpg",
-                width: 110,
-                height: 110,
+                itemImage.isNotEmpty ? itemImage : AppConstants.defaultImage,
+                width: 80,
+                height: 80,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Image.network(
+                  AppConstants.defaultImage,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             Column(
@@ -156,7 +150,7 @@ class CustomItemTile extends StatelessWidget {
                       fontSize: 17, fontWeight: FontWeight.w400),
                 ),
                 Text(
-                  "${itemPrice.toStringAsFixed(2)} ₹",
+                  "$price ₹",
                   style: const TextStyle(
                     color: Colors.blueAccent,
                     fontSize: 18,

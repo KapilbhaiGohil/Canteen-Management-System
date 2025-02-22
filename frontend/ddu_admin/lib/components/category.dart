@@ -131,11 +131,10 @@ class _CategoryState extends State<Category> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: _showCategoryOptions, // Show options on long press
+      onLongPress: _showCategoryOptions,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Category Title
           Container(
             padding: const EdgeInsets.all(10),
             width: double.infinity,
@@ -154,8 +153,6 @@ class _CategoryState extends State<Category> {
             ),
           ),
           const SizedBox(height: 10),
-
-          // If no items are available
           if (widget.items.isEmpty)
             const Center(
               child: Padding(

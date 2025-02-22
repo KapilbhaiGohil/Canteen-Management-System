@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:pay/pay.dart';
+import '../constant.dart';
+import '../providers/cartProvider.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -9,42 +12,10 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  List<Map<String, dynamic>> cartItems = [
-    {
-      "name": "Burger",
-      "price": 5.99,
-      "quantity": 2,
-      "image":
-          "https://www.shutterstock.com/image-photo/fried-salmon-steak-cooked-green-600nw-2489026949.jpg",
-    },
-    {
-      "name": "Pizza",
-      "price": 8.99,
-      "quantity": 1,
-      "image":
-          "https://www.shutterstock.com/image-photo/fried-salmon-steak-cooked-green-600nw-2489026949.jpg",
-    },
-  ];
-
   bool showPayButton = false;
-
-  void updateQuantity(int index, int change) {
-    setState(() {
-      cartItems[index]["quantity"] += change;
-      if (cartItems[index]["quantity"] <= 0) {
-        cartItems.removeAt(index);
-      }
-    });
-  }
-
-  double getTotalPrice() {
-    return cartItems.fold(
-        0, (sum, item) => sum + (item["price"] * item["quantity"]));
-  }
 
   void onGooglePayResult(Map<String, dynamic> paymentResult) {
     print("Payment Success: $paymentResult");
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Payment Successful via Google Pay!"),
@@ -53,13 +24,14 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void showPaymentDialog() {
+  void showPaymentDialog(BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Confirm Payment"),
         content: Text(
-            "Are you sure you want to pay ₹${getTotalPrice().toStringAsFixed(2)}?"),
+            "Are you sure you want to pay ₹${cartProvider.getTotalPrice().toStringAsFixed(2)}?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -79,25 +51,23 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final totalPrice = getTotalPrice().toStringAsFixed(2);
+    final cartProvider = Provider.of<CartProvider>(context);
+    final totalPrice = cartProvider.getTotalPrice().toStringAsFixed(2);
 
     final googlePayButton = FutureBuilder<PaymentConfiguration>(
-      future: PaymentConfiguration.fromAsset("lib/assets/gpay.json"),
+      future: PaymentConfiguration.fromAsset("gpay.json"),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(
-              child: CircularProgressIndicator(
-            color: Colors.blueAccent,
-          ));
+              child: CircularProgressIndicator(color: Colors.blueAccent));
         }
         return GooglePayButton(
           paymentConfiguration: snapshot.data!,
           paymentItems: [
             PaymentItem(
-              label: "Total",
-              amount: totalPrice,
-              status: PaymentItemStatus.final_price,
-            )
+                label: "Total",
+                amount: totalPrice,
+                status: PaymentItemStatus.final_price),
           ],
           theme: GooglePayButtonTheme.dark,
           type: GooglePayButtonType.pay,
@@ -108,7 +78,7 @@ class _CartScreenState extends State<CartScreen> {
       },
     );
 
-    return cartItems.isEmpty
+    return cartProvider.cartItems.isEmpty
         ? const Center(
             child: Text("Your cart is empty!",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -117,10 +87,10 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               Expanded(
                 child: ListView.separated(
-                  itemCount: cartItems.length,
+                  itemCount: cartProvider.cartItems.length,
                   separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, index) {
-                    var item = cartItems[index];
+                    var item = cartProvider.cartItems[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(
                           horizontal: 15, vertical: 8),
@@ -132,8 +102,21 @@ class _CartScreenState extends State<CartScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(item["image"],
-                                  width: 80, height: 80, fit: BoxFit.cover),
+                              child: Image.network(
+                                item["imageUrl"].isNotEmpty
+                                    ? item["imageUrl"]
+                                    : AppConstants.defaultImage,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Image.network(
+                                  AppConstants.defaultImage,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 15),
                             Expanded(
@@ -154,7 +137,8 @@ class _CartScreenState extends State<CartScreen> {
                             Row(
                               children: [
                                 IconButton(
-                                  onPressed: () => updateQuantity(index, -1),
+                                  onPressed: () =>
+                                      cartProvider.updateQuantity(index, -1),
                                   icon: const Icon(Icons.remove_circle,
                                       color: Colors.red),
                                 ),
@@ -163,7 +147,8 @@ class _CartScreenState extends State<CartScreen> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),
                                 IconButton(
-                                  onPressed: () => updateQuantity(index, 1),
+                                  onPressed: () =>
+                                      cartProvider.updateQuantity(index, 1),
                                   icon: const Icon(Icons.add_circle,
                                       color: Colors.green),
                                 ),
@@ -193,7 +178,7 @@ class _CartScreenState extends State<CartScreen> {
                     showPayButton
                         ? googlePayButton
                         : ElevatedButton(
-                            onPressed: showPaymentDialog,
+                            onPressed: () => showPaymentDialog(context),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
                               minimumSize: const Size(double.infinity, 50),
