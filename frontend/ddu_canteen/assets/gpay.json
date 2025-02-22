@@ -1,14 +1,33 @@
 {
+  "provider": "google_pay",
+  "data": {
+    "environment": "TEST",
     "apiVersion": 2,
     "apiVersionMinor": 0,
     "allowedPaymentMethods": [
       {
-        "type": "UPI",
+        "type": "CARD",
         "parameters": {
-          "pa": "your-vpa@upi",  
-          "pn": "Your Merchant Name"
+          "allowedAuthMethods": ["PAN_ONLY", "CRYPTOGRAM_3DS"],
+          "allowedCardNetworks": ["VISA", "MASTERCARD"]
+        },
+        "tokenizationSpecification": {
+          "type": "PAYMENT_GATEWAY",
+          "parameters": {
+            "gateway": "example",
+            "gatewayMerchantId": "exampleMerchantId"
+          }
         }
       }
-    ]
+    ],
+    "merchantInfo": {
+      "merchantName": "Your Merchant Name",
+      "merchantId": "YourMerchantID"
+    },
+    "transactionInfo": {
+      "totalPriceStatus": "FINAL",
+      "totalPrice": "10.00",
+      "currencyCode": "INR"
+    }
   }
-  
+}

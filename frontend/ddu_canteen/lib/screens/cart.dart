@@ -12,7 +12,7 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  bool showPayButton = false;
+  bool showGooglePayButton = false;
 
   void onGooglePayResult(Map<String, dynamic> paymentResult) {
     print("Payment Success: $paymentResult");
@@ -24,14 +24,13 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void showPaymentDialog(BuildContext context) {
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+  void confirmCheckout(CartProvider cartProvider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Confirm Payment"),
         content: Text(
-            "Are you sure you want to pay ₹${cartProvider.getTotalPrice().toStringAsFixed(2)}?"),
+            "Are you sure you want to pay ₹${cartProvider.getTotalPrice().toStringAsFixed(2)} using Google Pay?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -39,10 +38,12 @@ class _CartScreenState extends State<CartScreen> {
           ),
           TextButton(
             onPressed: () {
-              setState(() => showPayButton = true);
               Navigator.pop(context);
+              setState(() {
+                showGooglePayButton = true;
+              });
             },
-            child: const Text("Pay"),
+            child: const Text("Yes, Pay"),
           ),
         ],
       ),
@@ -52,22 +53,31 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
-    final totalPrice = cartProvider.getTotalPrice().toStringAsFixed(2);
+
+    // If quantity changes, reset Google Pay button visibility
+    cartProvider.addListener(() {
+      setState(() {
+        showGooglePayButton = false;
+      });
+    });
 
     final googlePayButton = FutureBuilder<PaymentConfiguration>(
-      future: PaymentConfiguration.fromAsset("gpay.json"),
+      future: PaymentConfiguration.fromAsset('gpay.json'),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(
               child: CircularProgressIndicator(color: Colors.blueAccent));
         }
         return GooglePayButton(
+          key: UniqueKey(),
+          margin: const EdgeInsets.only(top: 15.0),
           paymentConfiguration: snapshot.data!,
           paymentItems: [
             PaymentItem(
-                label: "Total",
-                amount: totalPrice,
-                status: PaymentItemStatus.final_price),
+              label: "Total",
+              amount: cartProvider.getTotalPrice().toStringAsFixed(2),
+              status: PaymentItemStatus.final_price,
+            ),
           ],
           theme: GooglePayButtonTheme.dark,
           type: GooglePayButtonType.pay,
@@ -127,7 +137,8 @@ class _CartScreenState extends State<CartScreen> {
                                       style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold)),
-                                  Text("₹${item["price"].toStringAsFixed(2)}",
+                                  Text(
+                                      "₹${(item["price"] * item["quantity"]).toStringAsFixed(2)}",
                                       style: TextStyle(
                                           fontSize: 16,
                                           color: Colors.grey.shade700)),
@@ -137,8 +148,9 @@ class _CartScreenState extends State<CartScreen> {
                             Row(
                               children: [
                                 IconButton(
-                                  onPressed: () =>
-                                      cartProvider.updateQuantity(index, -1),
+                                  onPressed: () {
+                                    cartProvider.updateQuantity(index, -1);
+                                  },
                                   icon: const Icon(Icons.remove_circle,
                                       color: Colors.red),
                                 ),
@@ -147,8 +159,9 @@ class _CartScreenState extends State<CartScreen> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),
                                 IconButton(
-                                  onPressed: () =>
-                                      cartProvider.updateQuantity(index, 1),
+                                  onPressed: () {
+                                    cartProvider.updateQuantity(index, 1);
+                                  },
                                   icon: const Icon(Icons.add_circle,
                                       color: Colors.green),
                                 ),
@@ -171,21 +184,28 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 child: Column(
                   children: [
-                    Text("Total: ₹$totalPrice",
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    Consumer<CartProvider>(
+                      builder: (context, cart, child) {
+                        return Text(
+                            "Total: ₹${cart.getTotalPrice().toStringAsFixed(2)}",
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold));
+                      },
+                    ),
                     const SizedBox(height: 10),
-                    showPayButton
+                    showGooglePayButton
                         ? googlePayButton
                         : ElevatedButton(
-                            onPressed: () => showPaymentDialog(context),
+                            onPressed: () => confirmCheckout(cartProvider),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
+                              backgroundColor: Colors.blue,
                               minimumSize: const Size(double.infinity, 50),
                             ),
-                            child: const Text("Checkout",
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.white)),
+                            child: const Text(
+                              "Checkout",
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.white),
+                            ),
                           ),
                   ],
                 ),

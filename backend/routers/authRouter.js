@@ -203,7 +203,7 @@ authRouter.post('/userLogin', async (req, res) => {
 
         if (!user) {
             console.log("Device ID not recognized, creating new user...");
-            user = new User({ deviceId ,role:'user'});
+            user = new User({ deviceId ,role:'user',name:deviceId,email:deviceId+'@gmail.com',password:deviceId});
             await user.save();
             console.log("New user created with device ID:", deviceId);
         }
