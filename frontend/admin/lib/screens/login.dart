@@ -1,8 +1,10 @@
+import 'package:admin/constants.dart';
 import 'package:admin/providers/authProvider.dart';
 import 'package:admin/services/canteenService.dart';
 import 'package:admin/widgets/widgets.dart';
 import 'package:admin/screens/home.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/single_child_widget.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -81,55 +83,59 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(30),
-        child: Form(
-          key: _formKey,
-          autovalidateMode: AutovalidateMode.onUnfocus,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Text(
-                "Login",
-                style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.blueAccent),
-              ),
-              const SizedBox(height: 60),
-              Column(
-                children: [
-                  CustomTextFormField(
-                    hintText: 'Enter your email.',
-                    labelText: 'Email',
-                    suffixIcon: Icons.email,
-                    controller: emailController,
-                    obscureText: false,
-                    validator: _validateEmail,
-                  ),
-                  const SizedBox(height: 20),
-                  CustomTextFormField(
-                    hintText: 'Enter your password.',
-                    labelText: 'Password',
-                    suffixIcon: Icons.lock,
-                    controller: passwordController,
-                    obscureText: true,
-                    validator: _validatePassword,
-                  ),
-                  const SizedBox(height: 20),
-                  _isLoading
-                      ? const CircularProgressIndicator(color: Colors.blueAccent,)
-                      : CustomButton(
-                          text: 'Submit',
-                          backgroundColor: Colors.blueAccent,
-                          textColor: Colors.white,
-                          onPressed: _login,
-                        ),
-                ],
-              ),
-            ],
+      backgroundColor: AppConstants.primaryColor,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Form(
+            key: _formKey,
+            autovalidateMode: AutovalidateMode.onUnfocus,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  "Login",
+                  style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w400,
+                      color: AppConstants.textColor),
+                ),
+                const SizedBox(height: 60),
+                Column(
+                  children: [
+                    CustomTextFormField(
+                      hintText: 'Enter your email.',
+                      labelText: 'Email',
+                      suffixIcon: Icons.email,
+                      controller: emailController,
+                      obscureText: false,
+                      validator: _validateEmail,
+                    ),
+                    const SizedBox(height: 20),
+                    CustomTextFormField(
+                      hintText: 'Enter your password.',
+                      labelText: 'Password',
+                      suffixIcon: Icons.lock,
+                      controller: passwordController,
+                      obscureText: true,
+                      validator: _validatePassword,
+                    ),
+                    const SizedBox(height: 20),
+                    _isLoading
+                        ? const CircularProgressIndicator(
+                            color: AppConstants.successColor,
+                          )
+                        : CustomButton(
+                            text: 'Submit',
+                            backgroundColor: AppConstants.successColor,
+                            textColor: AppConstants.primaryColor,
+                            onPressed: _login,
+                          ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

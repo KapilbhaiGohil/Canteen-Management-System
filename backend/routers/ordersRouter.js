@@ -1,28 +1,30 @@
 import express from 'express'; 
 import { Order, Item, User } from '../models/models.js';
-import {authenticate} from '../middlewares/middlewares.js'
+import { authenticate } from '../middlewares/middlewares.js';
+
 const orderRouter = express.Router();
 
-const generateUniqueOrderNumber = async () => {
+const generateUniqueOrderNumber = async (canteenId) => {
     let orderNumber;
     let exists = true;
 
-    console.log('Generating unique order number...');
+    console.log('Generating unique order number for canteen:', canteenId);
     while (exists) {
         orderNumber = Math.floor(Math.random() * (999 - 100 + 1)) + 100;
         console.log(`Generated order number: ${orderNumber}`);
-        exists = await Order.exists({ orderNumber, status: 'pending' });
-        if (exists) console.log(`Order number ${orderNumber} already exists. Generating again...`);
+        exists = await Order.exists({ orderNumber, status: 'pending', canteenId });
+        if (exists) console.log(`Order number ${orderNumber} already exists for canteen ${canteenId}. Generating again...`);
     }
-    console.log(`Unique order number generated: ${orderNumber}`);
+    console.log(`Unique order number generated: ${orderNumber} for canteen ${canteenId}`);
     return orderNumber;
 };
 
+
 orderRouter.post('/createOrder', async (req, res) => {
     try {
-        const { items, totalAmount,deviceId } = req.body;
-        const user = await User.findOne({deviceId});
-        if(!user){
+        const { items, totalAmount, deviceId, canteenId } = req.body;
+        const user = await User.findOne({ deviceId });
+        if (!user) {
             return res.status(401).json({ error: 'Unauthorized request' });
         }
         const userId = user._id;
@@ -31,10 +33,11 @@ orderRouter.post('/createOrder', async (req, res) => {
             return res.status(400).json({ message: 'No items in the order' });
         }
 
-        const orderNumber = await generateUniqueOrderNumber();
+        const orderNumber = await generateUniqueOrderNumber(canteenId);
 
         const newOrder = new Order({
             userId,
+            canteenId,  
             items,
             orderNumber,
             totalAmount,
@@ -51,31 +54,33 @@ orderRouter.post('/createOrder', async (req, res) => {
 
 orderRouter.get('/getOrders', async (req, res) => {
     try {
-        const { deviceId } = req.query;
+        const { deviceId, canteenId } = req.query;
 
         const user = await User.findOne({ deviceId });
         if (!user) {
             return res.status(401).json({ error: 'Unauthorized request' });
         }
 
-        const orders = await Order.find({ userId: user._id }).populate('items.itemId');
+        const orders = await Order.find({ userId: user._id, canteenId }) // Filter by canteenId
+            .populate('items.itemId');
         res.status(200).json({ orders });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching orders', error: error.message });
     }
 });
+
 orderRouter.patch('/updateItemStatus', async (req, res) => {
     try {
         console.log("Received request to update item status:", req.body);
 
-        const { orderId, itemId, status } = req.body;
+        const { orderId, itemId, status, canteenId } = req.body;
 
-        if (!orderId || !itemId || !status) {
-            console.log("Validation failed: Missing orderId, itemId, or status");
-            return res.status(400).json({ message: 'Order ID, Item ID, and status are required' });
+        if (!orderId || !itemId || !status || !canteenId) {
+            console.log("Validation failed: Missing orderId, itemId, status, or canteenId");
+            return res.status(400).json({ message: 'Order ID, Item ID, status, and canteenId are required' });
         }
 
-        const order = await Order.findOne({ _id: orderId });
+        const order = await Order.findOne({ _id: orderId, canteenId }); // Filter by canteenId
         console.log("Order found:", order);
 
         if (!order) {
@@ -119,8 +124,9 @@ orderRouter.patch('/updateItemStatus', async (req, res) => {
 orderRouter.get('/getPendingItems', async (req, res) => {
     try {
         console.log("Fetching orders with pending items...");
+        const { canteenId } = req.query;
 
-        let orders = await Order.find({ status: { $in: ['pending', 'Partial'] } })
+        let orders = await Order.find({ status: { $in: ['pending', 'Partial'] }, canteenId }) // Filter by canteenId
             .select('_id orderNumber items') 
             .populate('items.itemId', 'name imageUrl categoryId price canteenId isAvailable');
 
@@ -143,8 +149,9 @@ orderRouter.get('/getPendingItems', async (req, res) => {
 orderRouter.get('/getCookedItems', async (req, res) => {
     try {
         console.log("Fetching orders with cooked items...");
+        const { canteenId } = req.query;
 
-        let orders = await Order.find({ status: { $in: ['pending', 'Partial'] } })
+        let orders = await Order.find({ status: { $in: ['pending', 'Partial'] }, canteenId }) // Filter by canteenId
             .select('_id orderNumber items') 
             .populate('items.itemId', 'name imageUrl categoryId price canteenId isAvailable');
 
@@ -163,6 +170,5 @@ orderRouter.get('/getCookedItems', async (req, res) => {
         res.status(500).json({ message: 'Error fetching cooked items', error: error.message });
     }
 });
-
 
 export { orderRouter };

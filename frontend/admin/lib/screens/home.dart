@@ -1,3 +1,4 @@
+import 'package:admin/constants.dart';
 import 'package:admin/providers/canteenProvider.dart';
 import 'package:admin/screens/addCanteen.dart';
 import 'package:admin/screens/manager.dart';
@@ -25,12 +26,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     Future.microtask(() async {
       final canteenProvider =
-      Provider.of<CanteenProvider>(context, listen: false);
+          Provider.of<CanteenProvider>(context, listen: false);
       await canteenProvider.fetchCanteens();
     });
   }
 
-  void updateScreen(String screenName, Widget screenWidget, [bool shouldPop = true]) {
+  void updateScreen(String screenName, Widget screenWidget,
+      [bool shouldPop = true]) {
     setState(() {
       _activeScreen = screenName;
       _selectedScreen = screenWidget;
@@ -45,22 +47,34 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Log Out"),
-          content: const Text("Are you sure you want to log out?"),
+          backgroundColor: AppConstants.secondaryColor,
+          title: const Text(
+            "Log Out",
+            style: TextStyle(color: AppConstants.errorColor),
+          ),
+          content: const Text(
+            "Are you sure you want to log out?",
+            style: TextStyle(color: AppConstants.textColor),
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text("No"),
+              child: const Text(
+                "No",
+                style: TextStyle(color: AppConstants.textColor),
+              ),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
-                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final authProvider =
+                    Provider.of<AuthProvider>(context, listen: false);
                 await authProvider.logout();
               },
-              child: const Text("Yes", style: TextStyle(color: Colors.red)),
+              child: const Text("Yes",
+                  style: TextStyle(color: AppConstants.errorColor)),
             ),
           ],
         );
@@ -68,16 +82,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-  Widget _buildDrawerItem(String title,IconData icon, Widget screen) {
+  Widget _buildDrawerItem(String title, IconData icon, Widget screen) {
     bool isSelected = _activeScreen == title;
     return ListTile(
-      leading: Icon(icon, color: isSelected ? Colors.blueAccent : Colors.black),
+      leading: Icon(icon,
+          color:
+              isSelected ? AppConstants.successColor : AppConstants.textColor),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.blueAccent : Colors.black,
+          color:
+              isSelected ? AppConstants.successColor : AppConstants.textColor,
         ),
       ),
       onTap: () {
@@ -88,47 +104,63 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text(
-          _activeScreen,
-          style: const TextStyle(color: Colors.white),
+    return RefreshIndicator(
+      onRefresh: () async {
+        final canteenProvider =
+            Provider.of<CanteenProvider>(context, listen: false);
+        await canteenProvider.fetchCanteens();
+        setState(() {});
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: AppConstants.primaryColor,
+        appBar: AppBar(
+          title: Text(
+            _activeScreen,
+            style: const TextStyle(color: AppConstants.textColor),
+          ),
+          backgroundColor: AppConstants.primaryColor,
+          leading: IconButton(
+            icon: const Icon(Icons.menu, color: AppConstants.textColor),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
+          ),
         ),
-        backgroundColor: Colors.blueAccent,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () {
-            _scaffoldKey.currentState?.openDrawer();
-          },
-        ),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blueAccent),
-              child: Text(
-                'Actions',
-                style: TextStyle(color: Colors.white, fontSize: 24),
+        drawer: Drawer(
+          backgroundColor: AppConstants.secondaryColor,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const DrawerHeader(
+                decoration: BoxDecoration(color: AppConstants.primaryColor),
+                child: Text(
+                  'Actions',
+                  style:
+                      TextStyle(color: AppConstants.successColor, fontSize: 24),
+                ),
               ),
-            ),
-            _buildDrawerItem("Home", Icons.home, HomeContent(updateScreen: updateScreen)),
-            _buildDrawerItem("Add Canteen", Icons.add, Addcanteen(updateScreen: updateScreen)),
-            _buildDrawerItem("Managers", Icons.people, ManagerScreen()),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                "Log out",
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              _buildDrawerItem(
+                  "Home", Icons.home, HomeContent(updateScreen: updateScreen)),
+              _buildDrawerItem("Add Canteen", Icons.add,
+                  Addcanteen(updateScreen: updateScreen)),
+              _buildDrawerItem("Managers", Icons.people, ManagerScreen()),
+              ListTile(
+                leading:
+                    const Icon(Icons.logout, color: AppConstants.errorColor),
+                title: const Text(
+                  "Log out",
+                  style: TextStyle(
+                      color: AppConstants.errorColor,
+                      fontWeight: FontWeight.bold),
+                ),
+                onTap: _showLogoutDialog,
               ),
-              onTap: _showLogoutDialog,
-            ),
-          ],
+            ],
+          ),
         ),
+        body: _selectedScreen,
       ),
-      body: _selectedScreen,
     );
   }
 }
@@ -146,7 +178,7 @@ class HomeContent extends StatelessWidget {
       builder: (context, canteenProvider, _) {
         if (canteenProvider.isLoading) {
           return const Center(
-            child: CircularProgressIndicator(color: Colors.blueAccent),
+            child: CircularProgressIndicator(color: AppConstants.primaryColor),
           );
         }
 
@@ -179,16 +211,18 @@ class HomeContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
-
                   onPressed: () {
-                    updateScreen("Add Canteen", Addcanteen(updateScreen: updateScreen),false);
+                    updateScreen("Add Canteen",
+                        Addcanteen(updateScreen: updateScreen), false);
                   },
-                  icon: const Icon(Icons.add,color: Colors.white,),
+                  icon: const Icon(
+                    Icons.add,
+                    color: AppConstants.textColor,
+                  ),
                   label: const Text("Add Canteen"),
                   style: ElevatedButton.styleFrom(
-
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppConstants.primaryColor,
+                    foregroundColor: AppConstants.textColor,
                   ),
                 ),
               ],
@@ -220,12 +254,15 @@ class HomeContent extends StatelessWidget {
                         canteenName: canteen['name'] ?? 'N/A',
                         collegeName: canteen['collegeName'] ?? 'N/A',
                         district: canteen['district'] ?? 'N/A',
-                        pincode: int.tryParse(canteen['pinCode'].toString()) ?? 0,
-                        imageUrl: canteen['imageUrl'] ?? 'https://via.placeholder.com/150',
+                        pincode:
+                            int.tryParse(canteen['pinCode'].toString()) ?? 0,
+                        imageUrl: canteen['imageUrl'] ??
+                            'https://via.placeholder.com/150',
                         state: canteen['state'] ?? 'N/A',
                       );
                     },
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 8),
                   ),
                 ),
               ),

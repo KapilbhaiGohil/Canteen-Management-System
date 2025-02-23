@@ -1,3 +1,4 @@
+import 'package:admin/constants.dart';
 import 'package:admin/providers/canteenProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ class CustomTextField extends StatelessWidget {
   final Function(String)? onChanged;
   final bool obscureText;
   final List<TextInputFormatter>? inputFormatters;
+
   const CustomTextField({
     super.key,
     this.controller,
@@ -29,34 +31,28 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.black),
+      style: const TextStyle(color: AppConstants.textColor),
       decoration: InputDecoration(
         suffixIcon: suffixIcon != null
-            ? Icon(suffixIcon, color: Colors.blueAccent)
+            ? Icon(suffixIcon, color: AppConstants.accentColor)
             : null,
-        fillColor: Colors.white,
+        fillColor: AppConstants.secondaryColor,
         filled: true,
         hintText: hintText,
-        hintStyle: const TextStyle(
-          color: Colors.grey,
-          fontWeight: FontWeight.normal,
-        ),
+        hintStyle: const TextStyle(color: AppConstants.hintTextColor),
         labelText: labelText,
-        labelStyle: const TextStyle(
-          color: Colors.black,
-          fontSize: 16,
-        ),
+        labelStyle: const TextStyle(color: AppConstants.textColor),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
-          borderRadius: BorderRadius.circular(5),
+          borderSide: const BorderSide(color: AppConstants.borderColor),
+          borderRadius: BorderRadius.circular(8),
         ),
         border: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
-          borderRadius: BorderRadius.circular(5),
+          borderSide: const BorderSide(color: AppConstants.borderColor),
+          borderRadius: BorderRadius.circular(8),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
-          borderRadius: BorderRadius.circular(5),
+          borderSide: const BorderSide(color: AppConstants.accentColor),
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
       inputFormatters: inputFormatters ?? [],
@@ -74,6 +70,7 @@ class CustomTextFormField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
+
   const CustomTextFormField({
     super.key,
     this.controller,
@@ -95,33 +92,33 @@ class CustomTextFormField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       obscureText: obscureText ?? false,
-      style: const TextStyle(color: Colors.black),
+      style: const TextStyle(color: AppConstants.textColor),
       decoration: InputDecoration(
         suffixIcon: suffixIcon != null
-            ? Icon(suffixIcon, color: Colors.blueAccent)
+            ? Icon(suffixIcon, color: AppConstants.successColor)
             : null,
-        fillColor: Colors.white,
+        fillColor: AppConstants.secondaryColor,
         filled: true,
         hintText: hintText,
         hintStyle: const TextStyle(
-          color: Colors.grey,
+          color: AppConstants.hintTextColor,
           fontWeight: FontWeight.normal,
         ),
         labelText: labelText,
         labelStyle: const TextStyle(
-          color: Colors.black,
+          color: AppConstants.textColor,
           fontSize: 16,
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderSide: const BorderSide(color: AppConstants.successColor),
           borderRadius: BorderRadius.circular(5),
         ),
         border: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderSide: const BorderSide(color: AppConstants.successColor),
           borderRadius: BorderRadius.circular(5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderSide: const BorderSide(color: AppConstants.successColor),
           borderRadius: BorderRadius.circular(5),
         ),
       ),
@@ -130,22 +127,29 @@ class CustomTextFormField extends StatelessWidget {
   }
 }
 
-class CustomButton extends StatelessWidget {
+class CustomButton extends StatefulWidget {
   final String text;
   final VoidCallback? onPressed;
-  final Color backgroundColor;
-  final Color textColor;
+  final Color? backgroundColor;
+  final Color? textColor;
   final IconData? icon;
+  final bool isLoading;
 
   const CustomButton({
     super.key,
     required this.text,
     required this.onPressed,
-    this.backgroundColor = Colors.blue,
-    this.textColor = Colors.white,
+    this.backgroundColor,
+    this.textColor,
     this.icon,
+    this.isLoading = false,
   });
 
+  @override
+  _CustomButtonState createState() => _CustomButtonState();
+}
+
+class _CustomButtonState extends State<CustomButton> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -154,35 +158,34 @@ class CustomButton extends StatelessWidget {
         children: [
           Expanded(
             child: ElevatedButton(
-              onPressed: onPressed,
+              onPressed: widget.isLoading ? null : widget.onPressed,
               style: ElevatedButton.styleFrom(
-                foregroundColor: textColor,
-                backgroundColor: backgroundColor,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(5)),
+                foregroundColor: widget.textColor ?? AppConstants.primaryColor,
+                backgroundColor:
+                    widget.backgroundColor ?? AppConstants.successColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Center(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(
-                        icon,
+              child: widget.isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
                         color: Colors.white,
+                        strokeWidth: 2,
                       ),
-                      const SizedBox(
-                        width: 8,
-                      )
-                    ],
-                    Text(
-                      text,
-                      style: const TextStyle(fontSize: 16),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (widget.icon != null) ...[
+                          Icon(widget.icon, color: AppConstants.textColor),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(widget.text, style: const TextStyle(fontSize: 16)),
+                      ],
                     ),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
@@ -198,13 +201,14 @@ class ShowSnackbar {
       SnackBar(
         content: Text(
           message,
-          style: TextStyle(
-            color: isOk ? Colors.green : Colors.red,
+          style: const TextStyle(
+            color: AppConstants.primaryColor,
             fontSize: 15,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor:
+            isOk ? AppConstants.successColor : AppConstants.errorColor,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -249,20 +253,27 @@ class _CustomListTileState extends State<CustomListTile> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Confirm Delete"),
-          content: Text("Are you sure you want to delete ${widget.canteenName}?"),
+          backgroundColor: AppConstants.secondaryColor,
+          title: const Text("Confirm Delete",
+              style: TextStyle(color: AppConstants.errorColor)),
+          content: Text(
+              "Are you sure you want to delete ${widget.canteenName}?",
+              style: const TextStyle(color: AppConstants.textColor)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+              child: const Text("Cancel",
+                  style: TextStyle(color: AppConstants.textColor)),
             ),
             TextButton(
               onPressed: () async {
-                await canteenProvider.deleteCanteen(canteenId: widget.canteenId);
+                await canteenProvider.deleteCanteen(
+                    canteenId: widget.canteenId);
                 Navigator.pop(context);
                 print("Deleted canteen: ${widget.canteenId}");
               },
-              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+              child: const Text("Delete",
+                  style: TextStyle(color: AppConstants.errorColor)),
             ),
           ],
         );
@@ -292,6 +303,7 @@ class _CustomListTileState extends State<CustomListTile> {
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppConstants.secondaryColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
@@ -299,16 +311,18 @@ class _CustomListTileState extends State<CustomListTile> {
         return Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.edit, color: Colors.blueAccent),
-              title: const Text("Update Canteen"),
+              leading: const Icon(Icons.edit, color: AppConstants.accentColor),
+              title: const Text("Update Canteen",
+                  style: TextStyle(color: AppConstants.textColor)),
               onTap: () {
                 Navigator.pop(context);
                 _updateCanteen(context);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.redAccent),
-              title: const Text("Delete Canteen"),
+              leading: const Icon(Icons.delete, color: AppConstants.errorColor),
+              title: const Text("Delete Canteen",
+                  style: TextStyle(color: AppConstants.textColor)),
               onTap: () {
                 Navigator.pop(context);
                 _confirmDelete(context, widget.canteenProvider);
@@ -334,19 +348,20 @@ class _CustomListTileState extends State<CustomListTile> {
         width: double.infinity,
         height: _isTapped ? 120 : 110,
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 193, 224, 239),
+          color: AppConstants.successColor,
           borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(10),
             topLeft: Radius.circular(10),
           ),
-          border: Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
+          border:
+              Border(left: BorderSide(color: AppConstants.infoColor, width: 5)),
           boxShadow: _isTapped
               ? [
-            BoxShadow(
-              color: Colors.blueAccent.withOpacity(0.3),
-              blurRadius: 10,
-            )
-          ]
+                  BoxShadow(
+                    color: AppConstants.borderColor.withOpacity(0.3),
+                    blurRadius: 10,
+                  )
+                ]
               : [],
         ),
         child: Row(
@@ -361,7 +376,7 @@ class _CustomListTileState extends State<CustomListTile> {
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => const Icon(
                   Icons.error,
-                  color: Colors.red,
+                  color: AppConstants.errorColor,
                   size: 50,
                 ),
               ),
@@ -373,15 +388,17 @@ class _CustomListTileState extends State<CustomListTile> {
                 Text(
                   widget.canteenName,
                   style: const TextStyle(
-                    color: Colors.black,
+                    color: AppConstants.primaryColor,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text("${widget.collegeName}, ${widget.district}"),
+                Text("${widget.collegeName}, ${widget.district}",
+                    style: const TextStyle(color: AppConstants.primaryColor)),
                 const SizedBox(height: 4),
-                Text("${widget.state}, ${widget.pincode}"),
+                Text("${widget.state}, ${widget.pincode}",
+                    style: const TextStyle(color: AppConstants.primaryColor)),
               ],
             ),
           ],
@@ -412,30 +429,36 @@ class CustomDropdown extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: value,
       decoration: InputDecoration(
-        fillColor: Colors.white,
+        fillColor: AppConstants.secondaryColor,
         filled: true,
         hintText: hintText,
         hintStyle: const TextStyle(
-          color: Colors.grey,
+          color: AppConstants.textColor,
           fontWeight: FontWeight.normal,
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderSide: const BorderSide(color: AppConstants.successColor),
           borderRadius: BorderRadius.circular(5),
         ),
         border: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderSide: const BorderSide(color: AppConstants.successColor),
           borderRadius: BorderRadius.circular(5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.blueAccent),
+          borderSide: const BorderSide(color: AppConstants.successColor),
           borderRadius: BorderRadius.circular(5),
         ),
       ),
+      dropdownColor: AppConstants.secondaryColor,
+      iconEnabledColor: AppConstants.successColor,
+      style: const TextStyle(color: AppConstants.textColor),
       items: items.map((canteen) {
         return DropdownMenuItem<String>(
           value: canteen['id'], // ✅ Store ID
-          child: Text(canteen['name']!), // ✅ Display Name
+          child: Text(
+            canteen['name']!,
+            style: const TextStyle(color: AppConstants.textColor),
+          ),
         );
       }).toList(),
       onChanged: onChanged,

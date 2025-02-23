@@ -1,3 +1,4 @@
+import 'package:admin/constants.dart';
 import 'package:admin/providers/authProvider.dart';
 import 'package:admin/providers/canteenProvider.dart';
 import 'package:admin/screens/home.dart';
@@ -46,9 +47,11 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppConstants.primaryColor,
       body: Center(
-        child: CircularProgressIndicator(color: Colors.blueAccent,),
+        child: CircularProgressIndicator(
+          color: AppConstants.successColor,
+        ),
       ),
     );
   }

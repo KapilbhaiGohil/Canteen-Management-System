@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:isolate';
+import 'package:admin/constants.dart';
 import 'package:admin/providers/canteenProvider.dart';
 import 'package:admin/screens/home.dart';
 import 'package:admin/services/canteenService.dart';
@@ -29,7 +31,7 @@ class _AddcanteenState extends State<Addcanteen> {
   String? _existingImageUrl;
   final ImagePicker _picker = ImagePicker();
   bool isUpdating = false;
-
+  bool _isLoading = false;
   @override
   void initState() {
     super.initState();
@@ -91,7 +93,9 @@ class _AddcanteenState extends State<Addcanteen> {
     if (_formKey.currentState!.validate()) {
       final canteenProvider =
           Provider.of<CanteenProvider>(context, listen: false);
-
+      setState(() {
+        _isLoading = true;
+      });
       if (isUpdating) {
         bool isUpdated = await canteenProvider.updateCanteen(
           canteenId: widget.canteen!['_id'],
@@ -126,7 +130,6 @@ class _AddcanteenState extends State<Addcanteen> {
           pinCode: _pincodeController.text,
           context: context,
         );
-
         if (isAdded) {
           widget.updateScreen(
               "Home", HomeContent(updateScreen: widget.updateScreen), false);
@@ -134,15 +137,18 @@ class _AddcanteenState extends State<Addcanteen> {
               isOk: true);
         }
       }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          SingleChildScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.all(15),
             child: Form(
@@ -156,7 +162,7 @@ class _AddcanteenState extends State<Addcanteen> {
                       children: [
                         CircleAvatar(
                           radius: 70,
-                          backgroundColor: Colors.grey[300],
+                          backgroundColor: AppConstants.textColor,
                           backgroundImage: _image != null
                               ? FileImage(_image!) as ImageProvider
                               : _existingImageUrl != null
@@ -164,7 +170,7 @@ class _AddcanteenState extends State<Addcanteen> {
                                   : null,
                           child: (_image == null && _existingImageUrl == null)
                               ? const Icon(Icons.image,
-                                  size: 50, color: Colors.grey)
+                                  size: 50, color: AppConstants.buttonColor)
                               : null,
                         ),
                         Positioned(
@@ -175,11 +181,11 @@ class _AddcanteenState extends State<Addcanteen> {
                             child: Container(
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.blueAccent,
+                                color: AppConstants.successColor,
                               ),
                               padding: const EdgeInsets.all(5),
                               child: const Icon(Icons.camera_alt,
-                                  color: Colors.white, size: 20),
+                                  color: AppConstants.primaryColor, size: 20),
                             ),
                           ),
                         ),
@@ -251,14 +257,16 @@ class _AddcanteenState extends State<Addcanteen> {
               ),
             ),
           ),
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(15),
-          child: CustomButton(
-              text: isUpdating ? "Update" : "Submit", onPressed: _submitForm),
-        ),
-      ],
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(15),
+            child: CustomButton(
+                text: isUpdating ? "Update" : "Submit",
+                isLoading: _isLoading,
+                onPressed: _submitForm),
+          ),
+        ],
+      ),
     );
   }
 }

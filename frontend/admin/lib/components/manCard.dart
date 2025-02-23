@@ -1,3 +1,4 @@
+import 'package:admin/constants.dart';
 import 'package:flutter/material.dart';
 
 class ManagerCard extends StatefulWidget {
@@ -11,7 +12,8 @@ class ManagerCard extends StatefulWidget {
     required this.name,
     required this.email,
     required this.canteenName,
-    required this.onEdit, required this.onDelete,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   @override
@@ -28,14 +30,18 @@ class _ManagerCardState extends State<ManagerCard> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
       builder: (context) {
-        return Padding(
+        return Container(
+          color: AppConstants.secondaryColor,
           padding: EdgeInsets.all(15),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.edit, color: Colors.blueAccent),
-                title: Text("Edit Employee"),
+                leading: Icon(Icons.edit, color: AppConstants.accentColor),
+                title: Text(
+                  "Edit Manger",
+                  style: TextStyle(color: AppConstants.textColor),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   widget.onEdit(); // Open Edit Modal
@@ -43,7 +49,10 @@ class _ManagerCardState extends State<ManagerCard> {
               ),
               ListTile(
                 leading: Icon(Icons.delete, color: Colors.redAccent),
-                title: Text("Delete Employee"),
+                title: Text(
+                  "Delete Manager",
+                  style: TextStyle(color: AppConstants.textColor),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   widget.onDelete();
@@ -56,11 +65,10 @@ class _ManagerCardState extends State<ManagerCard> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: () => _showOptions(context), // Show options on long press
+      onLongPress: () => _showOptions(context),
       onTapDown: (_) => setState(() => _isTapped = true),
       onTapUp: (_) => setState(() => _isTapped = false),
       onTapCancel: () => setState(() => _isTapped = false),
@@ -71,12 +79,13 @@ class _ManagerCardState extends State<ManagerCard> {
         width: double.infinity,
         height: _isTapped ? 120 : 110,
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 193, 224, 239),
+          color: AppConstants.successColor,
           borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(10),
             topLeft: Radius.circular(10),
           ),
-          border: const Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
+          border: const Border(
+              left: BorderSide(color: AppConstants.infoColor, width: 5)),
           boxShadow: _isTapped
               ? [
                   BoxShadow(
@@ -91,13 +100,13 @@ class _ManagerCardState extends State<ManagerCard> {
             Container(
               padding: EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: AppConstants.infoColor,
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
                 widget.canteenName,
                 style: const TextStyle(
-                    color: Colors.white,
+                    color: AppConstants.textColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold),
               ),
@@ -107,14 +116,14 @@ class _ManagerCardState extends State<ManagerCard> {
               style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent),
+                  color: AppConstants.primaryColor),
             ),
             Text(
               widget.email,
               style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent),
+                  color: AppConstants.primaryColor),
             ),
           ],
         ),

@@ -219,7 +219,7 @@ class HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<CanteenProvider>(
       builder: (context, canteenProvider, child) {
-        if (canteenProvider.isLoading) {
+        if (canteenProvider.isLoadingCategories) {
           return const Center(
               child: CircularProgressIndicator(
             color: Colors.blueAccent,

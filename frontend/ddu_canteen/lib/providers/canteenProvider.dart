@@ -1,20 +1,29 @@
-import 'dart:io';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:web_socket_channel/io.dart';
 import '../services/canteenService.dart';
+import '../constant.dart';
 
 class CanteenProvider with ChangeNotifier {
   List<dynamic> _categories = [];
-  bool isLoading = false;
-  bool hasError = false;
   List<dynamic> _orders = [];
-  List<dynamic> get orders => _orders;
+  IOWebSocketChannel? _channel;
+
+  bool isLoadingCategories = false;
+  bool isLoadingOrders = false;
+  bool hasError = false;
+
   final CanteenService _canteenService = CanteenService();
 
   List<dynamic> get categories => _categories;
+  List<dynamic> get orders => _orders;
+
+  CanteenProvider() {
+    connectToOrderUpdates();
+  }
 
   Future<void> loadCategories() async {
-    isLoading = true;
+    isLoadingCategories = true;
     hasError = false;
     notifyListeners();
 
@@ -23,10 +32,10 @@ class CanteenProvider with ChangeNotifier {
       hasError = _categories.isEmpty;
     } catch (e) {
       hasError = true;
-      print('Error loading categories: $e');
+      debugPrint('Error loading categories: $e');
     }
 
-    isLoading = false;
+    isLoadingCategories = false;
     notifyListeners();
   }
 
@@ -36,16 +45,72 @@ class CanteenProvider with ChangeNotifier {
   }
 
   Future<void> loadOrders() async {
-    isLoading = true;
+    isLoadingOrders = true;
     notifyListeners();
 
     try {
       _orders = await _canteenService.fetchOrders();
     } catch (e) {
-      print('Error loading orders: $e');
+      debugPrint('Error loading orders: $e');
     }
 
-    isLoading = false;
+    isLoadingOrders = false;
     notifyListeners();
+  }
+
+  void connectToOrderUpdates() {
+    if (_channel != null) {
+      debugPrint("WebSocket already connected.");
+      return;
+    }
+
+    final String canteenId = AppConstants.canteenId;
+    debugPrint("Connecting to WebSocket: ${AppConstants.socketUri}");
+
+    try {
+      _channel = IOWebSocketChannel.connect(AppConstants.socketUri);
+
+      _channel!.sink.add(jsonEncode({
+        "event": "watchOrders",
+        "canteenId": canteenId,
+      }));
+
+      _channel!.stream.listen((data) {
+        debugPrint("WebSocket data received: $data");
+
+        try {
+          final Map<String, dynamic> order = jsonDecode(data);
+          _orders.add(order);
+          notifyListeners();
+        } catch (e) {
+          debugPrint("Error parsing WebSocket data: $e");
+        }
+      }, onError: (error) {
+        debugPrint("WebSocket Error: $error");
+        reconnect();
+      }, onDone: () {
+        debugPrint("WebSocket connection closed, reconnecting...");
+        reconnect();
+      });
+    } catch (e) {
+      debugPrint("WebSocket connection failed: $e");
+      reconnect();
+    }
+  }
+
+  void reconnect() {
+    Future.delayed(Duration(seconds: 3), () {
+      debugPrint("Reconnecting WebSocket...");
+      connectToOrderUpdates();
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_channel != null) {
+      _channel!.sink.close();
+      _channel = null;
+    }
+    super.dispose();
   }
 }

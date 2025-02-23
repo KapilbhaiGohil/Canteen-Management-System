@@ -25,7 +25,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final canteenProvider = Provider.of<CanteenProvider>(context);
     final orders = canteenProvider.orders;
 
-    return canteenProvider.isLoading
+    return canteenProvider.isLoadingOrders
         ? const Center(child: CircularProgressIndicator(color: Colors.white))
         : orders.isEmpty
             ? Center(

@@ -1,3 +1,4 @@
+import 'package:admin/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +21,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
   String? _selectedCanteen;
   bool _isEditing = false;
   String? _editingManagerId;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppConstants.secondaryColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -61,21 +64,19 @@ class _ManagerScreenState extends State<ManagerScreen> {
             children: [
               Text(
                 _isEditing ? "Edit Manager" : "Add Manager",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+                  color: AppConstants.successColor,
                 ),
               ),
               const SizedBox(height: 10),
-
               CustomTextFormField(
                 controller: _nameController,
                 hintText: "Enter manager name",
                 labelText: "Manager Name",
               ),
               const SizedBox(height: 10),
-
               CustomTextFormField(
                 controller: _emailController,
                 hintText: "Enter email",
@@ -83,7 +84,6 @@ class _ManagerScreenState extends State<ManagerScreen> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 10),
-
               if (!_isEditing)
                 Column(
                   children: [
@@ -96,18 +96,20 @@ class _ManagerScreenState extends State<ManagerScreen> {
                     const SizedBox(height: 10),
                   ],
                 ),
-
               Consumer<CanteenProvider>(
                 builder: (context, provider, child) {
                   return CustomDropdown(
                     value: _selectedCanteen,
                     hintText: "Select Canteen",
-                    items: provider.canteens.map((canteen) {
-                      return {
-                        'id': canteen['_id'].toString(),
-                        'name': canteen['name'].toString(),
-                      };
-                    }).toList().cast<Map<String, String>>(),
+                    items: provider.canteens
+                        .map((canteen) {
+                          return {
+                            'id': canteen['_id'].toString(),
+                            'name': canteen['name'].toString(),
+                          };
+                        })
+                        .toList()
+                        .cast<Map<String, String>>(),
                     onChanged: (value) {
                       setState(() {
                         _selectedCanteen = value;
@@ -117,16 +119,18 @@ class _ManagerScreenState extends State<ManagerScreen> {
                 },
               ),
               const SizedBox(height: 20),
-
               CustomButton(
                 text: _isEditing ? "Update Manager" : "Add Manager",
                 onPressed: () async {
                   final provider =
-                  Provider.of<CanteenProvider>(context, listen: false);
+                      Provider.of<CanteenProvider>(context, listen: false);
 
                   if (_selectedCanteen == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Please select a canteen")),
+                      SnackBar(
+                        content: const Text("Please select a canteen"),
+                        backgroundColor: AppConstants.errorColor,
+                      ),
                     );
                     return;
                   }
@@ -156,9 +160,11 @@ class _ManagerScreenState extends State<ManagerScreen> {
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                          content: Text(_isEditing
-                              ? "Failed to update manager"
-                              : "Failed to add manager")),
+                        content: Text(_isEditing
+                            ? "Failed to update manager"
+                            : "Failed to add manager"),
+                        backgroundColor: AppConstants.errorColor,
+                      ),
                     );
                   }
                 },
@@ -172,24 +178,29 @@ class _ManagerScreenState extends State<ManagerScreen> {
 
   Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
     return await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirm Deletion"),
-        content:
-        const Text("Are you sure you want to delete this manager?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text("Cancel"),
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppConstants.secondaryColor,
+            title: Text(
+              "Confirm Deletion",
+              style: TextStyle(color: AppConstants.errorColor),
+            ),
+            content: const Text("Are you sure you want to delete this manager?",
+                style: TextStyle(color: Colors.white)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child:
+                    const Text("Cancel", style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child:
+                    const Text("Delete", style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child:
-            const Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    ) ??
+        ) ??
         false;
   }
 
@@ -204,45 +215,51 @@ class _ManagerScreenState extends State<ManagerScreen> {
               width: double.infinity,
               margin: const EdgeInsets.all(15),
               child: provider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(
+                      color: AppConstants.successColor,
+                    ))
                   : provider.managers.isEmpty
-                  ? const Center(child: Text("No managers found"))
-                  : ListView.builder(
-                itemCount: provider.managers.length,
-                itemBuilder: (context, index) {
-                  final manager = provider.managers[index];
-                  return ManagerCard(
-                    name: manager['name'],
-                    email: manager['email'],
-                    canteenName: manager['canteenName'],
-                    onEdit: () => _showAddManagerModal(
-                      context,
-                      name: manager['name'],
-                      email: manager['email'],
-                      canteenId: manager['canteenId'],
-                      managerId: manager['id'],
-                    ),
-                    onDelete: () async {
-                      bool confirmDelete =
-                      await _showDeleteConfirmationDialog(
-                          context);
-                      if (confirmDelete) {
-                        await provider.deleteManager(
-                            managerId: manager['id']);
-                        provider.fetchManagers();
-                      }
-                    },
-                  );
-                },
-              ),
+                      ? Center(child: Text("No managers found,"))
+                      : ListView.separated(
+                          itemCount: provider.managers.length,
+                          itemBuilder: (context, index) {
+                            final manager = provider.managers[index];
+                            return ManagerCard(
+                              name: manager['name'],
+                              email: manager['email'],
+                              canteenName: manager['canteenName'],
+                              onEdit: () => _showAddManagerModal(
+                                context,
+                                name: manager['name'],
+                                email: manager['email'],
+                                canteenId: manager['canteenId'],
+                                managerId: manager['id'],
+                              ),
+                              onDelete: () async {
+                                bool confirmDelete =
+                                    await _showDeleteConfirmationDialog(
+                                        context);
+                                if (confirmDelete) {
+                                  await provider.deleteManager(
+                                      managerId: manager['id']);
+                                  provider.fetchManagers();
+                                }
+                              },
+                            );
+                          },
+                          separatorBuilder: (contex, index) => const SizedBox(
+                            height: 8,
+                          ),
+                        ),
             ),
             Positioned(
               bottom: 20,
               right: 20,
               child: FloatingActionButton(
                 onPressed: () => _showAddManagerModal(context),
-                backgroundColor: Colors.blueAccent,
-                child: const Icon(Icons.add, color: Colors.white),
+                backgroundColor: AppConstants.successColor,
+                child: const Icon(Icons.add, color: AppConstants.primaryColor),
               ),
             ),
           ],
