@@ -1,6 +1,7 @@
 import 'package:admin/constants.dart';
 import 'package:admin/providers/canteenProvider.dart';
 import 'package:admin/screens/addCanteen.dart';
+import 'package:admin/screens/login.dart';
 import 'package:admin/screens/manager.dart';
 import 'package:flutter/material.dart';
 import 'package:admin/widgets/widgets.dart';
@@ -72,6 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 final authProvider =
                     Provider.of<AuthProvider>(context, listen: false);
                 await authProvider.logout();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => const LoginScreen(),
+                  ),
+                );
               },
               child: const Text("Yes",
                   style: TextStyle(color: AppConstants.errorColor)),
@@ -207,7 +214,10 @@ class HomeContent extends StatelessWidget {
               children: [
                 const Text(
                   "No canteens available. Add a new one!",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: AppConstants.textColor,
+                      fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
@@ -217,12 +227,12 @@ class HomeContent extends StatelessWidget {
                   },
                   icon: const Icon(
                     Icons.add,
-                    color: AppConstants.textColor,
+                    color: AppConstants.primaryColor,
                   ),
                   label: const Text("Add Canteen"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstants.primaryColor,
-                    foregroundColor: AppConstants.textColor,
+                    backgroundColor: AppConstants.successColor,
+                    foregroundColor: AppConstants.primaryColor,
                   ),
                 ),
               ],

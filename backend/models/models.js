@@ -55,7 +55,7 @@ const orderSchema = new mongoose.Schema({
             status: { type: String, enum: ['pending', 'cooked','ready','completed', 'cancelled'], default: 'pending' }
         }
     ],
-    cateenId:{type:mongoose.Schema.Types.ObjectId,required:true},
+    canteenId:{type:mongoose.Schema.Types.ObjectId,ref:'Canteen',required:true},
     orderNumber: { type: Number, required: true },
     status: { type: String, enum: ['pending','Partial', 'completed', 'cancelled'], default: 'pending' },
     totalAmount: { type: Number, required: true }

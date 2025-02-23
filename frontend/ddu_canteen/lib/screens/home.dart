@@ -32,6 +32,13 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pop(context);
   }
 
+  void _updateSearchQuery(String query) {
+    setState(() {
+      _selectedScreen =
+          HomeContent(updateScreen: updateScreen, searchQuery: query);
+    });
+  }
+
   void updateScreen(String screenName, Widget screenWidget,
       [bool shouldPop = true]) {
     setState(() {
@@ -46,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedScreen = HomeContent(updateScreen: updateScreen);
+    _selectedScreen = HomeContent(searchQuery: "", updateScreen: updateScreen);
 
     Future.microtask(() async {
       final canteenProvider =
@@ -106,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 style: const TextStyle(color: Colors.white),
                 cursorColor: Colors.white,
-                onChanged: (value) => print("Searching for: $value"),
+                onChanged: _updateSearchQuery,
               )
             : Text(
                 _activeScreen,
@@ -145,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 setState(() {
                   _activeScreen = "Home";
                   _selectedScreen = HomeContent(
+                    searchQuery: "",
                     updateScreen: updateScreen,
                   );
                   _isSearching = false;
@@ -170,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icons.home,
                 "Home",
                 HomeContent(
+                  searchQuery: "",
                   updateScreen: updateScreen,
                 )),
             _buildDrawerItem(
@@ -213,8 +222,10 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key, required this.updateScreen});
+  const HomeContent(
+      {super.key, required this.updateScreen, required this.searchQuery});
   final Function(String, Widget, [bool]) updateScreen;
+  final String searchQuery;
   @override
   Widget build(BuildContext context) {
     return Consumer<CanteenProvider>(
@@ -237,10 +248,27 @@ class HomeContent extends StatelessWidget {
             ),
           );
         }
+        final filteredCategories = canteenProvider.categories
+            .map((category) {
+              final filteredItems = (category['items'] as List)
+                  .where((item) => item['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(searchQuery.toLowerCase()))
+                  .toList();
+              return {
+                '_id': category['_id'],
+                'name': category['name'],
+                'desc': category['desc'],
+                'items': filteredItems,
+              };
+            })
+            .where((category) => category['items'].isNotEmpty)
+            .toList();
         return SingleChildScrollView(
           padding: const EdgeInsets.all(15),
           child: Column(
-            children: canteenProvider.categories.map((category) {
+            children: filteredCategories.map((category) {
               return Column(
                 children: [
                   Category(

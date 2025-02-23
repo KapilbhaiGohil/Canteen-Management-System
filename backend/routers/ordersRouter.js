@@ -1,6 +1,7 @@
 import express from 'express'; 
 import { Order, Item, User } from '../models/models.js';
 import { authenticate } from '../middlewares/middlewares.js';
+import mongoose from 'mongoose';
 
 const orderRouter = express.Router();
 
@@ -23,6 +24,7 @@ const generateUniqueOrderNumber = async (canteenId) => {
 orderRouter.post('/createOrder', async (req, res) => {
     try {
         const { items, totalAmount, deviceId, canteenId } = req.body;
+        console.log(req.body)
         const user = await User.findOne({ deviceId });
         if (!user) {
             return res.status(401).json({ error: 'Unauthorized request' });
@@ -37,7 +39,7 @@ orderRouter.post('/createOrder', async (req, res) => {
 
         const newOrder = new Order({
             userId,
-            canteenId,  
+            canteenId:canteenId,  
             items,
             orderNumber,
             totalAmount,
@@ -55,14 +57,15 @@ orderRouter.post('/createOrder', async (req, res) => {
 orderRouter.get('/getOrders', async (req, res) => {
     try {
         const { deviceId, canteenId } = req.query;
-
-        const user = await User.findOne({ deviceId });
+        console.log(deviceId,canteenId);
+        const user = await User.findOne({ deviceId:deviceId });
         if (!user) {
             return res.status(401).json({ error: 'Unauthorized request' });
         }
-
-        const orders = await Order.find({ userId: user._id, canteenId }) // Filter by canteenId
+        console.log(user._id);
+        const orders = await Order.find({ userId: user._id, canteenId: new mongoose.Types.ObjectId(canteenId)  }) 
             .populate('items.itemId');
+            console.log(orders)
         res.status(200).json({ orders });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching orders', error: error.message });

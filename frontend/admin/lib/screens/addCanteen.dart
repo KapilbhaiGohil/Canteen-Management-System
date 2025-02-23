@@ -93,9 +93,6 @@ class _AddcanteenState extends State<Addcanteen> {
     if (_formKey.currentState!.validate()) {
       final canteenProvider =
           Provider.of<CanteenProvider>(context, listen: false);
-      setState(() {
-        _isLoading = true;
-      });
       if (isUpdating) {
         bool isUpdated = await canteenProvider.updateCanteen(
           canteenId: widget.canteen!['_id'],
@@ -137,9 +134,6 @@ class _AddcanteenState extends State<Addcanteen> {
               isOk: true);
         }
       }
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -261,9 +255,7 @@ class _AddcanteenState extends State<Addcanteen> {
             width: double.infinity,
             padding: const EdgeInsets.all(15),
             child: CustomButton(
-                text: isUpdating ? "Update" : "Submit",
-                isLoading: _isLoading,
-                onPressed: _submitForm),
+                text: isUpdating ? "Update" : "Submit", onPressed: _submitForm),
           ),
         ],
       ),

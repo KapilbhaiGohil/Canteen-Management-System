@@ -224,7 +224,11 @@ class _ManagerScreenState extends State<ManagerScreen> {
                       color: AppConstants.successColor,
                     ))
                   : provider.managers.isEmpty
-                      ? Center(child: Text("No managers found,"))
+                      ? Center(
+                          child: Text("No managers found,",
+                              style: TextStyle(
+                                color: AppConstants.textColor,
+                              )))
                       : ListView.separated(
                           itemCount: provider.managers.length,
                           itemBuilder: (context, index) {

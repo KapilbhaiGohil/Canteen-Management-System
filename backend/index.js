@@ -8,61 +8,61 @@ import { itemRouter } from './routers/itemRouter.js';
 import { orderRouter } from './routers/ordersRouter.js';
 import { canteenRouter } from './routers/canteenRouter.js';
 import { paymentRouter } from './routers/paymentRouter.js';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
+import { WebSocketServer } from 'ws';
+import http from 'http';
 
 const app = express();
 await connect();
-// 👉 WebSocket server on port 8081
-const wsServer = createServer();
-const io = new Server(wsServer, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
-});
+
+// Create HTTP Server for WebSocket
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
 
 const WS_PORT = 8081;
-wsServer.listen(WS_PORT, () => {
+const orderStreams = {};
+
+server.listen(WS_PORT, () => {
     console.log(`✅ WebSocket server running on port ${WS_PORT}`);
 });
 
-const orderStreams = {};
+wss.on("connection", (ws) => {
+    console.log("🔗 New WebSocket Client Connected");
 
-io.on("connection", (socket) => {
-    console.log("🔗 WebSocket Client connected:", socket.id);
-
-    socket.on("watchOrders", async (data) => {
+    ws.on("message", async (message) => {
         try {
-            const { canteenId } = JSON.parse(data);
-            console.log(`📌 watchOrders event from ${socket.id} for canteenId: ${canteenId}`);
+            const { event, canteenId } = JSON.parse(message);
+            console.log(`📌 Received event: ${event}, Canteen ID: ${canteenId}`);
 
-            if (!mongoose.Types.ObjectId.isValid(canteenId)) {
-                console.log(`❌ Invalid canteenId from ${socket.id}`);
-                socket.emit("error", { message: "Invalid canteenId" });
-                return;
+            if (event === "watchOrders") {
+                if (!mongoose.Types.ObjectId.isValid(canteenId)) {
+                    console.log(`❌ Invalid canteenId: ${canteenId}`);
+                    ws.send(JSON.stringify({ error: "Invalid canteenId" }));
+                    return;
+                }
+
+                if (!orderStreams[canteenId]) {
+                    console.log(`🔍 Starting order watch for canteen: ${canteenId}`);
+
+                    const orderChangeStream = Order.watch([
+                        { $match: { "fullDocument.canteenId": new mongoose.Types.ObjectId(canteenId) } }
+                    ]);
+
+                    orderChangeStream.on("change", (change) => {
+                        console.log(`✅ Order updated for canteen: ${canteenId}`);
+                        ws.send(JSON.stringify(change.fullDocument));
+                    });
+
+                    orderStreams[canteenId] = orderChangeStream;
+                }
             }
-
-            if (!orderStreams[canteenId]) {
-                console.log(`🔍 Starting new order watch for canteen: ${canteenId}`);
-
-                const orderChangeStream = Order.watch([
-                    { $match: { "fullDocument.canteenId": new mongoose.Types.ObjectId(canteenId) } }
-                ]);
-
-                orderChangeStream.on("change", (change) => {
-                    console.log(`✅ Order updated for canteen: ${canteenId}`);
-                    io.emit("orderUpdated", change.fullDocument);
-                });
-
-                orderStreams[canteenId] = orderChangeStream;
-            }
-
-            socket.on("disconnect", () => {
-                console.log(`❌ Client disconnected: ${socket.id}`);
-            });
-
         } catch (error) {
-            console.error(`🚨 Error in watchOrders from ${socket.id}:`, error);
-            socket.emit("error", { message: "Invalid request" });
+            console.error(`🚨 Error in WebSocket message:`, error);
+            ws.send(JSON.stringify({ error: "Invalid request" }));
         }
+    });
+
+    ws.on("close", () => {
+        console.log("❌ WebSocket Client Disconnected");
     });
 });
 
@@ -76,5 +76,5 @@ app.use('/payment', paymentRouter);
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-    console.log("Server is running on port:", port);
+    console.log("🚀 HTTP Server running on port:", port);
 });

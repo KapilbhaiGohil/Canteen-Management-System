@@ -1,3 +1,5 @@
+import 'package:ddu_admin/providers/authProvider.dart';
+import 'package:ddu_admin/screens/itemScreen.dart';
 import 'package:ddu_admin/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedScreen = HomeContent(updateScreen: updateScreen);
+    _selectedScreen = HomeContent(searchQuery: "", updateScreen: updateScreen);
 
     Future.microtask(() async {
       final canteenProvider =
@@ -48,6 +50,14 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _isSearching = !_isSearching;
       if (!_isSearching) _searchController.clear();
+      _updateSearchQuery("");
+    });
+  }
+
+  void _updateSearchQuery(String query) {
+    setState(() {
+      _selectedScreen =
+          HomeContent(updateScreen: updateScreen, searchQuery: query);
     });
   }
 
@@ -67,10 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 style: TextStyle(color: Colors.white),
                 cursorColor: Colors.white,
-                onChanged: (value) {
-                  print("Searching for: $value");
-                },
-              )
+                onChanged: _updateSearchQuery)
             : Text(
                 _activeScreen,
                 style: const TextStyle(color: Colors.white),
@@ -108,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 "Home",
                 updateScreen,
                 HomeContent(
+                  searchQuery: "",
                   updateScreen: updateScreen,
                 ),
                 _activeScreen),
@@ -147,8 +155,11 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key, required this.updateScreen});
+  const HomeContent(
+      {super.key, required this.updateScreen, required this.searchQuery});
   final Function(String, Widget, [bool]) updateScreen;
+  final String searchQuery;
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CanteenProvider>(
@@ -186,6 +197,7 @@ class HomeContent extends StatelessWidget {
             ),
           );
         }
+
         void _deleteCategory(String categoryId) {
           showDialog(
             context: context,
@@ -201,7 +213,6 @@ class HomeContent extends StatelessWidget {
                   ),
                   TextButton(
                     onPressed: () async {
-                      // Perform the delete action here using the provider
                       final canteenProvider =
                           Provider.of<CanteenProvider>(context, listen: false);
                       bool success =
@@ -228,10 +239,28 @@ class HomeContent extends StatelessWidget {
           );
         }
 
+        final filteredCategories = canteenProvider.categories
+            .map((category) {
+              final filteredItems = (category['items'] as List)
+                  .where((item) => item['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(searchQuery.toLowerCase()))
+                  .toList();
+              return {
+                '_id': category['_id'],
+                'name': category['name'],
+                'desc': category['desc'],
+                'items': filteredItems,
+              };
+            })
+            .where((category) => category['items'] != null)
+            .toList();
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(15),
           child: Column(
-            children: canteenProvider.categories.map((category) {
+            children: filteredCategories.map((category) {
               return Column(
                 children: [
                   Category(
@@ -239,7 +268,7 @@ class HomeContent extends StatelessWidget {
                     desc: category['desc'],
                     updateScreen: updateScreen,
                     categoryName: category['name'],
-                    items: category['items'] ?? [],
+                    items: category['items'],
                     onDeleteCategory: () => _deleteCategory(category['_id']),
                   ),
                   const SizedBox(height: 8),

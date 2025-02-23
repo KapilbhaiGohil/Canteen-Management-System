@@ -52,7 +52,8 @@ class CanteenService {
               .map((item) =>
                   {"itemId": item['itemId'], "quantity": item['quantity']})
               .toList(),
-          "totalAmount": totalAmount
+          "totalAmount": totalAmount,
+          "canteenId": AppConstants.canteenId
         }),
       );
 
@@ -79,7 +80,8 @@ class CanteenService {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/order/getOrders?deviceId=$deviceId'),
+        Uri.parse(
+            '$baseUrl/order/getOrders?deviceId=$deviceId&canteenId=${AppConstants.canteenId}'),
         headers: {
           'Content-Type': 'application/json',
         },

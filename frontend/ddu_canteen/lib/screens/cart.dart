@@ -32,25 +32,25 @@ class _CartScreenState extends State<CartScreen> {
                 cartProvider.cartItems,
                 cartProvider.getTotalPrice(),
               );
-              if (success != null) {
-                cartProvider.clearCart();
-                //handle success
-                widget.updateScreen("My orders",
-                    OrdersScreen(updateScreen: widget.updateScreen), false);
+
+              cartProvider.clearCart();
+              widget.updateScreen(
+                "My orders",
+                OrdersScreen(updateScreen: widget.updateScreen),
+                false,
+              );
+
+              Future.microtask(() {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("order placed successfully."),
-                    backgroundColor: Colors.green,
+                  SnackBar(
+                    content: Text(success != null
+                        ? "Order placed successfully."
+                        : "Failed to place order. Try again."),
+                    backgroundColor:
+                        success != null ? Colors.green : Colors.red,
                   ),
                 );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("failed to place order. Try again."),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
+              });
             },
             child: const Text("Yes, Pay"),
           ),

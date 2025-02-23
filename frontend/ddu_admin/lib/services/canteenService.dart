@@ -391,9 +391,17 @@ class CanteenService {
   Future<List<Map<String, dynamic>>?> getPendingItems() async {
     try {
       final accessToken = await _secureStorage.read(key: 'accessToken');
+      final canteenData = await _secureStorage.read(key: "canteen");
 
+      if (canteenData == null) {
+        print("No canteen data found. Logging out user.");
+        return null;
+      }
+
+      final canteen = jsonDecode(canteenData);
+      final String? canteenId = canteen['_id'];
       final response = await http.get(
-        Uri.parse('$baseUrl/order/getPendingItems'),
+        Uri.parse('$baseUrl/order/getPendingItems?canteenId=$canteenId'),
         headers: {
           'Authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',
@@ -417,9 +425,17 @@ class CanteenService {
   Future<List<Map<String, dynamic>>?> getCookedItems() async {
     try {
       final accessToken = await _secureStorage.read(key: 'accessToken');
+      final canteenData = await _secureStorage.read(key: "canteen");
 
+      if (canteenData == null) {
+        print("No canteen data found. Logging out user.");
+        return null;
+      }
+
+      final canteen = jsonDecode(canteenData);
+      final String? canteenId = canteen['_id'];
       final response = await http.get(
-        Uri.parse('$baseUrl/order/getCookedItems'),
+        Uri.parse('$baseUrl/order/getCookedItems?canteenId=$canteenId'),
         headers: {
           'Authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',
@@ -443,11 +459,24 @@ class CanteenService {
   Future<bool> updateItemStatus(
       String orderId, String itemId, String status) async {
     try {
+      final canteenData = await _secureStorage.read(key: "canteen");
+
+      if (canteenData == null) {
+        print("No canteen data found. Logging out user.");
+        return false;
+      }
+
+      final canteen = jsonDecode(canteenData);
+      final String? canteenId = canteen['_id'];
       final response = await http.patch(
         Uri.parse('$baseUrl/order/updateItemStatus'),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(
-            {"orderId": orderId, "itemId": itemId, "status": status}),
+        body: jsonEncode({
+          "orderId": orderId,
+          "canteenId": canteenId,
+          "itemId": itemId,
+          "status": status
+        }),
       );
 
       if (response.statusCode == 200) {

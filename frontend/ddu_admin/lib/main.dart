@@ -20,40 +20,50 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-            create: (context) => AuthProvider()..tryAutoLogin()),
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(create: (context) => CanteenProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
-          if (authProvider.isAuthenticated) {
-            switch (authProvider.role) {
-              case 'manager':
-                return const MaterialApp(
-                    title: 'Canteen App', home: HomeScreen());
-              case 'foodProvider':
-                return const MaterialApp(
-                    title: 'Canteen App', home: OrderScreen());
-              case 'Chef':
-                return const MaterialApp(
-                    title: 'Canteen App', home: ItemScreen());
-              default:
-                return const MaterialApp(home: SplashScreen());
-            }
-          }
-          if (!authProvider.isAuthenticated) {
-            return const MaterialApp(
-              debugShowCheckedModeBanner: false,
-              home: LoginScreen(),
-            );
-          }
-          return const MaterialApp(
+          return MaterialApp(
             debugShowCheckedModeBanner: false,
-            home: SplashScreen(),
+            title: 'Canteen App',
+            home: _buildHome(authProvider),
           );
         },
       ),
     );
+  }
+
+  Widget _buildHome(AuthProvider authProvider) {
+    if (authProvider.isLoading) {
+      return const SplashScreen(); // Show loading while authentication is in progress
+    }
+    if (authProvider.isAuthenticated) {
+      return const RoleBasedScreen();
+    } else {
+      return const LoginScreen();
+    }
+  }
+}
+
+class RoleBasedScreen extends StatelessWidget {
+  const RoleBasedScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    switch (authProvider.role) {
+      case 'manager':
+        return const HomeScreen();
+      case 'foodProvider':
+        return const OrderScreen();
+      case 'Chef':
+        return const ItemScreen();
+      default:
+        return const LoginScreen();
+    }
   }
 }
 

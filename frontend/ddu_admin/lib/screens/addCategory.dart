@@ -123,7 +123,9 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                       setState(() => _isLoading = false);
                       widget.updateScreen(
                           "Home",
-                          HomeContent(updateScreen: widget.updateScreen),
+                          HomeContent(
+                              searchQuery: "",
+                              updateScreen: widget.updateScreen),
                           false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

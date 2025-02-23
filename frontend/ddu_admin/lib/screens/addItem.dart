@@ -143,7 +143,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
       if (success) {
         widget.updateScreen(
-            "Home", HomeContent(updateScreen: widget.updateScreen), false);
+            "Home",
+            HomeContent(searchQuery: "", updateScreen: widget.updateScreen),
+            false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(widget.itemId == null

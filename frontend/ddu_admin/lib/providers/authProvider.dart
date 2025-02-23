@@ -10,13 +10,24 @@ class AuthProvider with ChangeNotifier {
   String? _accessToken;
   bool _isAuthenticated = false;
   bool _isLoading = true;
-  String role = '';
+  String? _role = '';
   Map<String, dynamic>? _canteen;
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get accessToken => _accessToken;
   Map<String, dynamic>? get canteen => _canteen;
+
+  String? get role => _role;
+
+  void setRole(String role) {
+    _role = role;
+    notifyListeners();
+  }
+
+  AuthProvider() {
+    tryAutoLogin();
+  }
 
   Future<void> _saveTokens(String accessToken, String refreshToken) async {
     try {
@@ -72,7 +83,7 @@ class AuthProvider with ChangeNotifier {
           }
 
           print("Access token is valid.");
-          role = responseData['user']['role'];
+          setRole(responseData['user']['role']);
           _isAuthenticated = true;
           print("Assigned Role: $role");
           _canteen = responseData['canteen'];
@@ -91,6 +102,7 @@ class AuthProvider with ChangeNotifier {
     }
 
     _isLoading = false;
+
     notifyListeners();
   }
 
@@ -126,7 +138,7 @@ class AuthProvider with ChangeNotifier {
         await _saveTokens(_accessToken!, responseData['refreshToken']);
         _canteen = responseData['canteen'];
         await _saveCanteen(_canteen);
-        role = responseData['user']['role'];
+        setRole(responseData['user']['role']);
         _isAuthenticated = true;
         print("Assigned Role: $role");
         print("Token refresh successful.");
@@ -164,13 +176,13 @@ class AuthProvider with ChangeNotifier {
 
         _accessToken = responseData['accessToken'];
         String refreshToken = responseData['refreshToken'];
-        role = responseData['user']['role'];
+        setRole(responseData['user']['role']);
+        notifyListeners();
         _isAuthenticated = true;
         print("Assigned Role: $role");
         await _saveTokens(_accessToken!, refreshToken);
         _canteen = responseData['canteen'];
         await _saveCanteen(_canteen);
-
         notifyListeners();
         print("Login successful.");
         return {"isOk": true, "message": "Successful login."};

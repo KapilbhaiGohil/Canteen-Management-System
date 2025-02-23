@@ -30,8 +30,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
         : orders.isEmpty
             ? Center(
                 child: Text("No orders placed yet!",
-                    style: GoogleFonts.poppins(
-                        fontSize: 16, color: Colors.white70)),
+                    style:
+                        GoogleFonts.poppins(fontSize: 16, color: Colors.black)),
               )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
