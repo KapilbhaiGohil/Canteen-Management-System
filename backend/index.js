@@ -14,7 +14,7 @@ app.use(bodyParser.json())
 app.use('/auth',authRouter);
 app.use('/canteen',canteenRouter);
 app.use('/item',itemRouter);
-app.use('/orders',orderRouter);
+app.use('/order',orderRouter);
 app.use('/payment',paymentRouter);
 const port = process.env.PORT
 app.listen(port,(e)=>{

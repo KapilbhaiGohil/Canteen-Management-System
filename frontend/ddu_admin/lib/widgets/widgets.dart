@@ -1,5 +1,8 @@
+import 'package:ddu_admin/providers/authProvider.dart';
+import 'package:ddu_admin/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
@@ -289,7 +292,7 @@ class CustomItemTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             Text(
-              "\$$price",
+              "$price ₹",
               style: const TextStyle(
                 color: Colors.blueAccent,
                 fontSize: 17,
@@ -354,4 +357,59 @@ class CustomDropdown extends StatelessWidget {
       validator: validator,
     );
   }
+}
+
+void showLogoutDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("Log Out"),
+        content: const Text("Are you sure you want to log out?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text("No"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await Provider.of<AuthProvider>(context, listen: false).logout();
+              if (context.mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+              }
+            },
+            child: const Text("Yes", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget buildDrawerItem(
+    IconData icon,
+    String title,
+    Function(String, Widget, [bool]) updateScreen,
+    Widget screen,
+    _activeScreen) {
+  bool isSelected = _activeScreen == title;
+  return ListTile(
+    leading: Icon(icon, color: isSelected ? Colors.blueAccent : Colors.black),
+    title: Text(
+      title,
+      style: TextStyle(
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        color: isSelected ? Colors.blueAccent : Colors.black,
+      ),
+    ),
+    onTap: () {
+      updateScreen(title, screen);
+    },
+  );
 }

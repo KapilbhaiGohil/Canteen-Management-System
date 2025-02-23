@@ -1,5 +1,4 @@
-import 'package:ddu_admin/providers/authProvider.dart';
-import 'package:ddu_admin/screens/login.dart';
+import 'package:ddu_admin/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../components/category.dart';
@@ -50,38 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _isSearching = !_isSearching;
       if (!_isSearching) _searchController.clear();
     });
-  }
-
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Log Out"),
-          content: const Text("Are you sure you want to log out?"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("No"),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await Provider.of<AuthProvider>(context, listen: false)
-                    .logout();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                );
-              },
-              child: const Text("Yes", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -136,25 +103,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
-            _buildDrawerItem(
+            buildDrawerItem(
                 Icons.home,
                 "Home",
+                updateScreen,
                 HomeContent(
                   updateScreen: updateScreen,
-                )),
-            _buildDrawerItem(
+                ),
+                _activeScreen),
+            buildDrawerItem(
                 Icons.category,
                 "Add Category",
+                updateScreen,
                 AddCategoryScreen(
                   updateScreen: updateScreen,
-                )),
-            _buildDrawerItem(
+                ),
+                _activeScreen),
+            buildDrawerItem(
                 Icons.fastfood,
                 "Add Item",
+                updateScreen,
                 AddItemScreen(
                   updateScreen: updateScreen,
-                )),
-            _buildDrawerItem(Icons.people, "Employees", EmployeesScreen()),
+                ),
+                _activeScreen),
+            buildDrawerItem(Icons.people, "Employees", updateScreen,
+                EmployeesScreen(), _activeScreen),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(
@@ -162,29 +136,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 style:
                     TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
-              onTap: _showLogoutDialog,
+              onTap: () => {showLogoutDialog(context)},
             ),
           ],
         ),
       ),
       body: _selectedScreen,
-    );
-  }
-
-  Widget _buildDrawerItem(IconData icon, String title, Widget screen) {
-    bool isSelected = _activeScreen == title;
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? Colors.blueAccent : Colors.black),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.blueAccent : Colors.black,
-        ),
-      ),
-      onTap: () {
-        updateScreen(title, screen);
-      },
     );
   }
 }

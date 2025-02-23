@@ -7,27 +7,37 @@
     "allowedPaymentMethods": [
       {
         "type": "CARD",
-        "parameters": {
-          "allowedAuthMethods": ["PAN_ONLY", "CRYPTOGRAM_3DS"],
-          "allowedCardNetworks": ["VISA", "MASTERCARD"]
-        },
         "tokenizationSpecification": {
           "type": "PAYMENT_GATEWAY",
           "parameters": {
             "gateway": "example",
-            "gatewayMerchantId": "exampleMerchantId"
+            "gatewayMerchantId": "gatewayMerchantId"
+          }
+        },
+        "parameters": {
+          "allowedCardNetworks": [
+            "VISA",
+            "MASTERCARD"
+          ],
+          "allowedAuthMethods": [
+            "PAN_ONLY",
+            "CRYPTOGRAM_3DS"
+          ],
+          "billingAddressRequired": true,
+          "billingAddressParameters": {
+            "format": "FULL",
+            "phoneNumberRequired": true
           }
         }
       }
     ],
     "merchantInfo": {
-      "merchantName": "Your Merchant Name",
-      "merchantId": "YourMerchantID"
+      "merchantId": "01234567890123456789",
+      "merchantName": "Example Merchant Name"
     },
     "transactionInfo": {
-      "totalPriceStatus": "FINAL",
-      "totalPrice": "10.00",
-      "currencyCode": "INR"
+      "countryCode": "US",
+      "currencyCode": "USD"
     }
   }
 }

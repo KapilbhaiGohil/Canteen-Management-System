@@ -80,7 +80,8 @@ authRouter.post('/login', async (req, res) => {
 
         return res.status(200).json({
             ...tokens,
-            canteen: user.canteenId || null
+            canteen: user.canteenId || null,
+            user:user
         });
     } catch (err) {
         console.error("Login error:", err);
@@ -115,7 +116,8 @@ authRouter.post('/validateToken', async (req, res) => {
             console.log("Access token is valid for user:", user._id);
             return res.status(200).json({
                 message: "Access token is valid.",
-                canteen: user.canteenId || null 
+                canteen: user.canteenId || null ,
+                user:user
             });
         });
     } catch (err) {
@@ -154,7 +156,7 @@ authRouter.post('/refreshTokens', async (req, res) => {
         await user.save();
 
         console.log("New tokens generated for user:", user._id);
-        return res.status(200).json(newTokens);
+        return res.status(200).json({accessToken:newTokens.accessToken,refreshToken:newTokens.refreshToken,user:user});
     } catch (err) {
         console.error("Refresh token error:", err);
         return res.status(500).json({ error: 'Internal server error.' });

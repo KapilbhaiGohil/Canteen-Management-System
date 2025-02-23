@@ -5,6 +5,9 @@ import 'package:ddu_admin/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'screens/itemScreen.dart';
+import 'screens/orders.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
@@ -23,16 +26,30 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
-          if (authProvider.isLoading) {
+          if (authProvider.isAuthenticated) {
+            switch (authProvider.role) {
+              case 'manager':
+                return const MaterialApp(
+                    title: 'Canteen App', home: HomeScreen());
+              case 'foodProvider':
+                return const MaterialApp(
+                    title: 'Canteen App', home: OrderScreen());
+              case 'Chef':
+                return const MaterialApp(
+                    title: 'Canteen App', home: ItemScreen());
+              default:
+                return const MaterialApp(home: SplashScreen());
+            }
+          }
+          if (!authProvider.isAuthenticated) {
             return const MaterialApp(
               debugShowCheckedModeBanner: false,
-              home: SplashScreen(),
+              home: LoginScreen(),
             );
           }
-          return MaterialApp(
-            title: 'Canteen App',
+          return const MaterialApp(
             debugShowCheckedModeBanner: false,
-            home: authProvider.isAuthenticated ? HomeScreen() : LoginScreen(),
+            home: SplashScreen(),
           );
         },
       ),

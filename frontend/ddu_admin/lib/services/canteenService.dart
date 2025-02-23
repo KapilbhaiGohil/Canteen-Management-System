@@ -387,4 +387,78 @@ class CanteenService {
       return false;
     }
   }
+
+  Future<List<Map<String, dynamic>>?> getPendingItems() async {
+    try {
+      final accessToken = await _secureStorage.read(key: 'accessToken');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/order/getPendingItems'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print("Pending Orders: $data");
+        return List<Map<String, dynamic>>.from(data['orders']); // Adjusted key
+      } else {
+        print('Failed to fetch pending orders: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching pending orders: $e');
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>?> getCookedItems() async {
+    try {
+      final accessToken = await _secureStorage.read(key: 'accessToken');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/order/getCookedItems'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print("Pending Orders: $data");
+        return List<Map<String, dynamic>>.from(data['orders']);
+      } else {
+        print('Failed to fetch pending orders: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching pending orders: $e');
+      return null;
+    }
+  }
+
+  Future<bool> updateItemStatus(
+      String orderId, String itemId, String status) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/order/updateItemStatus'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(
+            {"orderId": orderId, "itemId": itemId, "status": status}),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print(jsonDecode(response.body));
+        return false;
+      }
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
 }

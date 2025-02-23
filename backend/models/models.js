@@ -47,16 +47,16 @@ const categorySchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const orderSchema = new mongoose.Schema({
-    deviceId: { type: String, required: true }, 
+    userId: { type: mongoose.Schema.Types.ObjectId,ref:'User', required: true }, 
     items: [
         {
             itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
             quantity: { type: Number, required: true },
-            status: { type: String, enum: ['pending', 'completed', 'cancelled'], default: 'pending' }
+            status: { type: String, enum: ['pending', 'cooked','ready','completed', 'cancelled'], default: 'pending' }
         }
     ],
     orderNumber: { type: Number, required: true },
-    status: { type: String, enum: ['pending', 'completed', 'cancelled'], default: 'pending' },
+    status: { type: String, enum: ['pending','Partial', 'completed', 'cancelled'], default: 'pending' },
     totalAmount: { type: Number, required: true }
 }, { timestamps: true });
 

@@ -1,47 +1,56 @@
+import 'package:ddu_canteen/screens/orders.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pay/pay.dart';
-import '../constant.dart';
 import '../providers/cartProvider.dart';
+import '../providers/canteenProvider.dart';
 
 class CartScreen extends StatefulWidget {
-  const CartScreen({super.key});
-
+  const CartScreen({super.key, required this.updateScreen});
+  final Function(String, Widget, [bool]) updateScreen;
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
 
 class _CartScreenState extends State<CartScreen> {
-  bool showGooglePayButton = false;
-
-  void onGooglePayResult(Map<String, dynamic> paymentResult) {
-    print("Payment Success: $paymentResult");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Payment Successful via Google Pay!"),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void confirmCheckout(CartProvider cartProvider) {
+  void confirmCheckout(
+      CartProvider cartProvider, CanteenProvider canteenProvider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Confirm Payment"),
         content: Text(
-            "Are you sure you want to pay ₹${cartProvider.getTotalPrice().toStringAsFixed(2)} using Google Pay?"),
+            "Are you sure you want to pay ₹${cartProvider.getTotalPrice().toStringAsFixed(2)}?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text("Cancel"),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              setState(() {
-                showGooglePayButton = true;
-              });
+              var success = await canteenProvider.createOrder(
+                cartProvider.cartItems,
+                cartProvider.getTotalPrice(),
+              );
+              if (success != null) {
+                cartProvider.clearCart();
+                //handle success
+                widget.updateScreen("My orders",
+                    OrdersScreen(updateScreen: widget.updateScreen), false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("order placed successfully."),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("failed to place order. Try again."),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             child: const Text("Yes, Pay"),
           ),
@@ -53,40 +62,8 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
-
-    // If quantity changes, reset Google Pay button visibility
-    cartProvider.addListener(() {
-      setState(() {
-        showGooglePayButton = false;
-      });
-    });
-
-    final googlePayButton = FutureBuilder<PaymentConfiguration>(
-      future: PaymentConfiguration.fromAsset('gpay.json'),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(
-              child: CircularProgressIndicator(color: Colors.blueAccent));
-        }
-        return GooglePayButton(
-          key: UniqueKey(),
-          margin: const EdgeInsets.only(top: 15.0),
-          paymentConfiguration: snapshot.data!,
-          paymentItems: [
-            PaymentItem(
-              label: "Total",
-              amount: cartProvider.getTotalPrice().toStringAsFixed(2),
-              status: PaymentItemStatus.final_price,
-            ),
-          ],
-          theme: GooglePayButtonTheme.dark,
-          type: GooglePayButtonType.pay,
-          width: double.infinity,
-          height: 50,
-          onPaymentResult: onGooglePayResult,
-        );
-      },
-    );
+    final canteenProvider =
+        Provider.of<CanteenProvider>(context, listen: false);
 
     return cartProvider.cartItems.isEmpty
         ? const Center(
@@ -113,19 +90,10 @@ class _CartScreenState extends State<CartScreen> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
-                                item["imageUrl"].isNotEmpty
-                                    ? item["imageUrl"]
-                                    : AppConstants.defaultImage,
+                                item["imageUrl"],
                                 width: 80,
                                 height: 80,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Image.network(
-                                  AppConstants.defaultImage,
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.cover,
-                                ),
                               ),
                             ),
                             const SizedBox(width: 15),
@@ -148,9 +116,8 @@ class _CartScreenState extends State<CartScreen> {
                             Row(
                               children: [
                                 IconButton(
-                                  onPressed: () {
-                                    cartProvider.updateQuantity(index, -1);
-                                  },
+                                  onPressed: () =>
+                                      cartProvider.updateQuantity(index, -1),
                                   icon: const Icon(Icons.remove_circle,
                                       color: Colors.red),
                                 ),
@@ -159,9 +126,8 @@ class _CartScreenState extends State<CartScreen> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),
                                 IconButton(
-                                  onPressed: () {
-                                    cartProvider.updateQuantity(index, 1);
-                                  },
+                                  onPressed: () =>
+                                      cartProvider.updateQuantity(index, 1),
                                   icon: const Icon(Icons.add_circle,
                                       color: Colors.green),
                                 ),
@@ -187,26 +153,23 @@ class _CartScreenState extends State<CartScreen> {
                     Consumer<CartProvider>(
                       builder: (context, cart, child) {
                         return Text(
-                            "Total: ₹${cart.getTotalPrice().toStringAsFixed(2)}",
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold));
+                          "Total: ₹${cart.getTotalPrice().toStringAsFixed(2)}",
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        );
                       },
                     ),
                     const SizedBox(height: 10),
-                    showGooglePayButton
-                        ? googlePayButton
-                        : ElevatedButton(
-                            onPressed: () => confirmCheckout(cartProvider),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              minimumSize: const Size(double.infinity, 50),
-                            ),
-                            child: const Text(
-                              "Checkout",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                          ),
+                    ElevatedButton(
+                      onPressed: () =>
+                          confirmCheckout(cartProvider, canteenProvider),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: const Text("Checkout",
+                          style: TextStyle(fontSize: 16, color: Colors.white)),
+                    ),
                   ],
                 ),
               ),

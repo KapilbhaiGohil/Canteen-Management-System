@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:ddu_canteen/screens/orders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -128,7 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 setState(() {
                   _activeScreen = "Cart";
-                  _selectedScreen = CartScreen();
+                  _selectedScreen = CartScreen(
+                    updateScreen: updateScreen,
+                  );
                   _isSearching = false;
                   _searchController.clear();
                 });
@@ -169,7 +172,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 HomeContent(
                   updateScreen: updateScreen,
                 )),
-            _buildDrawerItem(Icons.shopping_bag, "Cart", const CartScreen()),
+            _buildDrawerItem(
+                Icons.shopping_bag,
+                "Cart",
+                CartScreen(
+                  updateScreen: updateScreen,
+                )),
+            _buildDrawerItem(Icons.shopping_cart, "My orders",
+                OrdersScreen(updateScreen: updateScreen)),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(

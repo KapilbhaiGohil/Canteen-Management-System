@@ -154,4 +154,80 @@ class CanteenProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  List<dynamic> _pendingOrders = [];
+  List<dynamic> get pendingOrders => _pendingOrders;
+
+  Future<void> loadPendingOrders() async {
+    isLoading = true;
+    hasError = false;
+    notifyListeners();
+
+    try {
+      final response = await _canteenService.getPendingItems();
+      _pendingOrders = response ?? []; // Store orders instead of flat item list
+      if (response == null) hasError = _pendingOrders.isEmpty;
+    } catch (e) {
+      hasError = true;
+      print('Error loading pending orders: $e');
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  List<dynamic> _cookedOrders = [];
+  List<dynamic> get cookedOrders => _cookedOrders;
+
+  Future<void> loadCookedOrders() async {
+    isLoading = true;
+    hasError = false;
+    notifyListeners();
+
+    try {
+      final response = await _canteenService.getCookedItems();
+      _cookedOrders = response ?? [];
+      if (response == null) hasError = _cookedOrders.isEmpty;
+    } catch (e) {
+      hasError = true;
+      print('Error loading pending orders: $e');
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<bool> updateItemStatus(
+      String orderId, String itemId, String status) async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final response =
+          await _canteenService.updateItemStatus(orderId, itemId, status);
+      if (response) {
+        print("Item status updated: ");
+        isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      isLoading = false;
+      print(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  String? _selectedOrder;
+  String? get selectedOrder => _selectedOrder;
+
+  void setSelectedOrder(String orderId) {
+    _selectedOrder = orderId;
+    notifyListeners();
+  }
 }

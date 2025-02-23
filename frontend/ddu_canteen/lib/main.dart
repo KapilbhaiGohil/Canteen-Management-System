@@ -8,6 +8,7 @@ import 'providers/cartProvider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
   runApp(const MyApp());
 }
 
@@ -57,7 +58,7 @@ class SplashScreen extends StatelessWidget {
     return const Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: CircularProgressIndicator(color:Colors.blueAccent),
+        child: CircularProgressIndicator(color: Colors.blueAccent),
       ),
     );
   }

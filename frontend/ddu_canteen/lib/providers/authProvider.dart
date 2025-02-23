@@ -39,6 +39,7 @@ class AuthProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
+        await _secureStorage.write(key: 'deviceId', value: deviceId);
         print("Server response: OK");
       } else {
         print("Unexpected response: ${response.statusCode}");

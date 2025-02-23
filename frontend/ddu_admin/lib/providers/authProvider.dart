@@ -10,6 +10,7 @@ class AuthProvider with ChangeNotifier {
   String? _accessToken;
   bool _isAuthenticated = false;
   bool _isLoading = true;
+  String role = '';
   Map<String, dynamic>? _canteen;
 
   bool get isAuthenticated => _isAuthenticated;
@@ -36,18 +37,6 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (error) {
       print("Error saving canteen details: $error");
-    }
-  }
-
-  Future<void> _loadCanteen() async {
-    try {
-      String? canteenData = await _secureStorage.read(key: 'canteen');
-      if (canteenData != null) {
-        _canteen = jsonDecode(canteenData);
-        print("Canteen loaded successfully.");
-      }
-    } catch (error) {
-      print("Error loading canteen details: $error");
     }
   }
 
@@ -83,7 +72,9 @@ class AuthProvider with ChangeNotifier {
           }
 
           print("Access token is valid.");
+          role = responseData['user']['role'];
           _isAuthenticated = true;
+          print("Assigned Role: $role");
           _canteen = responseData['canteen'];
           await _saveCanteen(_canteen);
         } else if (response.statusCode == 403 || response.statusCode == 401) {
@@ -135,8 +126,9 @@ class AuthProvider with ChangeNotifier {
         await _saveTokens(_accessToken!, responseData['refreshToken']);
         _canteen = responseData['canteen'];
         await _saveCanteen(_canteen);
+        role = responseData['user']['role'];
         _isAuthenticated = true;
-
+        print("Assigned Role: $role");
         print("Token refresh successful.");
         notifyListeners();
       } else {
@@ -172,8 +164,9 @@ class AuthProvider with ChangeNotifier {
 
         _accessToken = responseData['accessToken'];
         String refreshToken = responseData['refreshToken'];
+        role = responseData['user']['role'];
         _isAuthenticated = true;
-
+        print("Assigned Role: $role");
         await _saveTokens(_accessToken!, refreshToken);
         _canteen = responseData['canteen'];
         await _saveCanteen(_canteen);
