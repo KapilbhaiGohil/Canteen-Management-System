@@ -7,7 +7,7 @@ class CanteenProvider with ChangeNotifier {
   bool isLoading = false;
   bool hasError = false;
   final CanteenService _canteenService = CanteenService();
-  List<dynamic>_managers = [];
+  List<dynamic> _managers = [];
   List<dynamic> get canteens => _canteens;
   List<dynamic> get managers => _managers;
 
@@ -93,6 +93,7 @@ class CanteenProvider with ChangeNotifier {
       return resData['error'] ?? "Failed to delete canteen.";
     }
   }
+
   Future<void> fetchManagers() async {
     isLoading = true;
     hasError = false;
@@ -107,6 +108,7 @@ class CanteenProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
   Future<bool> registerManager({
     required String name,
     required String email,
@@ -129,6 +131,7 @@ class CanteenProvider with ChangeNotifier {
       return false;
     }
   }
+
   Future<bool> updateManager({
     required String managerId,
     required String name,
@@ -151,9 +154,10 @@ class CanteenProvider with ChangeNotifier {
       return false;
     }
   }
+
   Future<String> deleteManager({required String managerId}) async {
     var resData = await _canteenService.deleteManager(managerId);
-
+    print(resData);
     if (resData['isOk']) {
       _managers.removeWhere((manager) => manager['_id'] == managerId);
       notifyListeners();
@@ -162,5 +166,4 @@ class CanteenProvider with ChangeNotifier {
       return resData['error'] ?? "Failed to delete manager.";
     }
   }
-
 }

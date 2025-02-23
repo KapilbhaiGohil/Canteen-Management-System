@@ -351,18 +351,24 @@ authRouter.delete('/deleteUser', authenticate, authorize(['admin','manager']), a
             console.log("Manager ID is required");
             return res.status(400).json({ error: 'Manager ID is required!' });
         }
-
         const manager = await User.findById(managerId);
         if (!manager) {
             console.log("Manager not found");
             return res.status(404).json({ error: 'Manager not found.' });
         }
+        console.log(manager)
         if(manager.role == 'foodProvider' || manager.role == 'Chef'){
             await User.findByIdAndDelete(managerId);
             console.log("Manager deleted successfully:", managerId);
             return res.status(200).json({ message: "Manager deleted successfully!" });
         }else{
-            return res.status(403).json({ message: "Manager deleted successfully!" });
+            console.log("Hi -----------------f------",req.user,manager);
+            if(manager.role == 'manager' && req.user.role=='admin'){
+                await User.findByIdAndDelete(managerId);
+                return res.status(200).json({ message: "Manager deleted successfully!" });
+            }else{
+                return res.status(401).json({ error: 'Autorization failed !' });
+            }
         }
     } catch (err) {
         console.error("Delete error:", err);

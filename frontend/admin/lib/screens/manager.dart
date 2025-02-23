@@ -177,7 +177,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
   }
 
   Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
-    return await showDialog(
+    return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: AppConstants.secondaryColor,
@@ -185,8 +185,10 @@ class _ManagerScreenState extends State<ManagerScreen> {
               "Confirm Deletion",
               style: TextStyle(color: AppConstants.errorColor),
             ),
-            content: const Text("Are you sure you want to delete this manager?",
-                style: TextStyle(color: Colors.white)),
+            content: const Text(
+              "Are you sure you want to delete this manager?",
+              style: TextStyle(color: Colors.white),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
@@ -194,7 +196,9 @@ class _ManagerScreenState extends State<ManagerScreen> {
                     const Text("Cancel", style: TextStyle(color: Colors.white)),
               ),
               TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed: () async {
+                  Navigator.of(context).pop(true);
+                },
                 child:
                     const Text("Delete", style: TextStyle(color: Colors.red)),
               ),
@@ -243,7 +247,9 @@ class _ManagerScreenState extends State<ManagerScreen> {
                                 if (confirmDelete) {
                                   await provider.deleteManager(
                                       managerId: manager['id']);
-                                  provider.fetchManagers();
+
+                                  await provider
+                                      .fetchManagers(); // Ensure the state updates properly
                                 }
                               },
                             );
